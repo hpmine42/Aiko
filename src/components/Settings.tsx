@@ -123,7 +123,7 @@ export function Settings({
           <Accordion id="profil" title="Profil" defaultOpen>
             <div className="card">
               <button type="button" className="item" onClick={() => avatarFile.current?.click()}>
-                <span className="av">{config.avatar ? <img src={config.avatar} alt="" /> : (config.userName || config.assistantName || 'N')[0].toUpperCase()}</span>
+                <span className="av">{config.avatar ? <img src={config.avatar} alt="" /> : (config.assistantName || 'Aiko')[0].toUpperCase()}</span>
                 Profilbild {config.avatar ? 'ändern' : 'hinzufügen'}
               </button>
               {config.avatar && <button type="button" className="item danger" onClick={async () => {

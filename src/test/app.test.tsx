@@ -21,6 +21,14 @@ describe('React app', () => {
     expect(screen.getByText(/Du erzeugst Chatbot-Regeln/)).toBeInTheDocument();
   });
 
+  it('derives the fallback avatar letter from the configured AI name', () => {
+    window.localStorage.setItem('nova.config.v1', JSON.stringify({ assistantName: 'Mika', userName: 'Jakob' }));
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Seitenleiste öffnen' }));
+    expect(container.querySelector('.pav')).toHaveTextContent('M');
+    expect(document.title).toBe('Mika');
+  });
+
   it('sends a message and renders a local result', async () => {
     window.localStorage.setItem('nova.ui.v1', JSON.stringify({ stream: false, think: false, saveHistory: true, suggest: true, theme: 'dark', calm: true }));
     render(<App />);

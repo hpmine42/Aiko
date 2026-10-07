@@ -64,7 +64,7 @@ export function Sidebar({
   }, [chats, query]);
 
   let previousGroup = '';
-  const initial = (config.userName || config.assistantName || '?').charAt(0).toUpperCase();
+  const initial = (config.assistantName || 'Aiko').charAt(0).toUpperCase();
 
   return (
     <>
