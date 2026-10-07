@@ -110,9 +110,11 @@ function ChartWidget({ svg, toast }: { svg: string; toast: (message: string) => 
       toast('Speichern hier nicht möglich');
     }
   };
+  // Charts may be restored from a user-supplied backup. An SVG used as an image
+  // cannot execute inline event handlers, unlike an SVG inserted as HTML.
   return (
     <div className="wch">
-      <div dangerouslySetInnerHTML={{ __html: svg }} />
+      <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} alt="Diagramm" />
       <div className="wqr-b"><button type="button" className="ch-save" onClick={save}>Bild speichern</button></div>
     </div>
   );

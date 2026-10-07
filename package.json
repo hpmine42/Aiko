@@ -24,5 +24,16 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.3",
     "vitest": "^5.0.3"
-  }
+  },
+  "description": "Regelbasierter Offline-Chat-Assistent mit lokalen Werkzeugen, eigenen Regeln und privater Browser-Speicherung – ohne Sprachmodell oder Backend.",
+  "keywords": [
+    "offline",
+    "chatbot",
+    "rule-based",
+    "privacy",
+    "local-first",
+    "react",
+    "typescript",
+    "german"
+  ]
 }

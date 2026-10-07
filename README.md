@@ -126,7 +126,9 @@ Vite gibt die lokale Adresse aus. Einstellungen, Regeln und Chats werden ausschl
 
 ### GitHub Pages
 
-Der Workflow liegt bereits unter [`.github/workflows/pages.yml`](.github/workflows/pages.yml) und deployt jeden Push nach `main`, nachdem Typprüfung, Tests und Build durchgelaufen sind. Als Pages-Quelle in den Repository-Einstellungen **GitHub Actions** wählen. Eine identische Vorlage zum Kopieren liegt unter [`docs/pages.yml`](docs/pages.yml).
+Der Workflow unter [`.github/workflows/pages.yml`](.github/workflows/pages.yml) prüft bei jedem Push auf `main` Typen, Tests und Build und deployt danach den gebauten Stand. Als Pages-Quelle in den Repository-Einstellungen **GitHub Actions** wählen. Eine identische Vorlage zum Kopieren liegt unter [`docs/pages.yml`](docs/pages.yml).
+
+Für den GitHub-Bereich **About** (Repository-Einstellungen): Beschreibung „Regelbasierter Offline-Chat-Assistent mit lokalen Werkzeugen und eigenen Regeln – ohne Sprachmodell, Backend oder Tracking.“; Website `https://hpmine42.github.io/Aiko/`; Topics `offline`, `chatbot`, `rule-based`, `privacy`, `local-first`, `react`, `typescript`, `german`.
 
 ---
 

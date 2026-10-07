@@ -284,7 +284,7 @@ body.calm *{animation-duration:.01s!important;transition-duration:.01s!important
 .wpw-v{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:15px;letter-spacing:.4px;word-break:break-all;user-select:all;padding:2px 0 8px}
 .wqr-b .pw-copy,.wqr-b .ch-save{font-size:13px;padding:8px 16px;border-radius:999px;background:#173f7d;color:#fff;border:none}
 .wch{margin:10px 0 4px;width:min(100%,440px);background:#fff;border-radius:16px;padding:10px;border:1px solid var(--line)}
-.wch svg{display:block;width:100%;height:auto;border-radius:10px}
+.wch img{display:block;width:100%;height:auto;border-radius:10px}
 .wck{margin:10px 0 4px;width:min(100%,340px);border-radius:16px;padding:6px 6px 8px;border:1px solid var(--line);background:var(--hover)}
 .wck-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;font-size:13px;font-weight:600;color:var(--dim)}
 .wck-n{font-size:12px;color:var(--mute);font-weight:500}

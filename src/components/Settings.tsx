@@ -3,7 +3,7 @@ import type { AikoConfig, Chat, Rule, RuleTestResult, UiPreferences } from '../t
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
 import { CMD_LIST, CMD_MORE } from '../data/commands';
 import { SOURCE_LABEL, configureEngine, plain, ruleTitle, runRuleTests, variantsOf, withName } from '../engine/aikoEngine';
-import { clone, normalizeConfig, normalizeUi } from '../utils/config';
+import { clone, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
 import { copyText, downloadBlob, resizeAvatar } from '../utils/browser';
 import type { DialogOptions } from './Dialog';
 import { CodeImport } from './CodeImport';
@@ -81,14 +81,17 @@ export function Settings({
 
   const restore = async (file: File) => {
     try {
-      const parsed = JSON.parse(await file.text()) as { config?: unknown; ui?: unknown; chats?: Chat[] };
+      const parsed = JSON.parse(await file.text()) as { config?: unknown; ui?: unknown; chats?: unknown };
       if (!parsed || typeof parsed !== 'object' || !parsed.config) { toast('Das ist kein Nova-Backup'); return; }
-      if (!(await confirm({ title: 'Backup wiederherstellen?', text: 'Regeln, Einstellungen und Chats werden durch den Inhalt des Backups ersetzt.', ok: 'Wiederherstellen', danger: true }))) return;
       const nextConfig = normalizeConfig(parsed.config);
+      const restoredChats = Array.isArray(parsed.chats)
+        ? parsed.chats.map((chat) => normalizeChat(chat, nextConfig)).filter((chat): chat is Chat => Boolean(chat?.messages.length) && !chat?.temp)
+        : [];
+      if (!(await confirm({ title: 'Backup wiederherstellen?', text: 'Regeln, Einstellungen und Chats werden durch den Inhalt des Backups ersetzt.', ok: 'Wiederherstellen', danger: true }))) return;
       changeConfig(nextConfig);
       if (parsed.ui) onUi(normalizeUi(parsed.ui));
-      if (Array.isArray(parsed.chats)) onChats(parsed.chats.filter((chat) => chat && Array.isArray(chat.messages) && chat.messages.length));
-      toast(`Wiederhergestellt · ${Array.isArray(parsed.chats) ? parsed.chats.length : 0} Chats, ${nextConfig.pairs.length} Regeln`);
+      if (Array.isArray(parsed.chats)) onChats(restoredChats);
+      toast(`Wiederhergestellt · ${restoredChats.length} Chats, ${nextConfig.pairs.length} Regeln`);
     } catch {
       toast('Keine gültige Backup-Datei');
     }
