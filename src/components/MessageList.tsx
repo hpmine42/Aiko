@@ -76,6 +76,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
             message={message}
             index={index}
             config={config}
+            modelId={chat.model}
             generating={generatingIndex === index}
             thinking={generatingIndex === index && thinking}
             onConfig={onConfig}

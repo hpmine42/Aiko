@@ -10,6 +10,7 @@ interface MessageProps {
   message: ChatMessage;
   index: number;
   config: AikoConfig;
+  modelId: string;
   generating: boolean;
   thinking: boolean;
   onConfig: (config: AikoConfig) => void;
@@ -74,6 +75,7 @@ function AssistantMessageView({
   message,
   index,
   config,
+  modelId,
   generating,
   thinking,
   onConfig,
@@ -92,7 +94,7 @@ function AssistantMessageView({
   const rendered = withName(raw);
   const meta = message.meta?.[message.vi] || { rule: null, cap: '', source: '', val: null };
   const rule = meta.rule ? config.pairs.find((entry) => entry.id === meta.rule) : undefined;
-  const suggestions = !generating && rule ? (rule.suggest || []).slice(0, 3) : [];
+  const suggestions = !generating && rule ? (rule.suggest || []).slice(0, 4) : [];
   const thought = message.thoughts?.[message.vi];
 
   const onMarkdownClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -196,7 +198,7 @@ function AssistantMessageView({
           <Icon name="copy" /><span className="tx">Als Text kopieren</span>
         </button>
         <button type="button" className="pi" onClick={() => { onRegenerate(index); setMoreOpen(false); }}>
-          <Icon name="regen" /><span className="tx">Modell: {config.assistantName} {config.models.find((model) => model.id === config.defaultModel)?.label || '4'}</span>
+          <Icon name="regen" /><span className="tx">Modell: {config.assistantName} {config.models.find((model) => model.id === modelId)?.label || '4'}</span>
         </button>
       </Popover>
     </div>

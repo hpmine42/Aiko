@@ -338,6 +338,3 @@ body.calm *{animation-duration:.01s!important;transition-duration:.01s!important
 .wqr>div:first-child>svg,.wch>div:first-child>svg{display:block;width:100%;height:auto}
 .editbox textarea{height:auto}
 button.scrim{border-radius:0}
-@media(min-width:800px){
-  #side{width:300px}
-}
