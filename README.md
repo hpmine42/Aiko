@@ -64,6 +64,19 @@ npm run preview
 
 The static production build is written to `dist/` and can be hosted on any static web server.
 
+### GitHub Pages
+
+A ready-to-use workflow template is stored at [`docs/pages.yml`](docs/pages.yml). Copy it to GitHub's workflow directory when you want to enable deployment:
+
+```bash
+mkdir -p .github/workflows
+cp docs/pages.yml .github/workflows/pages.yml
+```
+
+Commit the copied file and select **GitHub Actions** as the Pages source in the repository settings. The workflow validates, builds, and deploys every push to `main`.
+
+Eine fertige Workflow-Vorlage liegt unter [`docs/pages.yml`](docs/pages.yml). Kopiere sie bei Bedarf wie oben nach `.github/workflows/pages.yml`, committe die Datei und wähle in den Repository-Einstellungen für Pages **GitHub Actions** als Quelle.
+
 ## Project structure / Projektstruktur
 
 ```text
