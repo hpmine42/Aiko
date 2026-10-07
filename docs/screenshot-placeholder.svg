@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Aiko screenshot placeholder</title>
+  <desc id="desc">Placeholder for a future screenshot of the mobile Aiko chat.</desc>
+  <rect width="960" height="540" rx="24" fill="#0d0d0d"/>
+  <rect x="350" y="34" width="260" height="472" rx="32" fill="#000" stroke="#383838" stroke-width="3"/>
+  <rect x="374" y="88" width="212" height="292" rx="12" fill="#111"/>
+  <circle cx="392" cy="62" r="5" fill="#cdcdcd"/>
+  <rect x="410" y="57" width="72" height="10" rx="5" fill="#383838"/>
+  <rect x="398" y="404" width="164" height="58" rx="24" fill="#212121" stroke="#383838"/>
+  <path d="M414 433h18M423 424v18" stroke="#f3f3f3" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="542" cy="433" r="17" fill="#2c67c5"/>
+  <path d="M542 440v-14m-6 6 6-6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="480" y="248" text-anchor="middle" fill="#f3f3f3" font-family="system-ui,sans-serif" font-size="28" font-weight="600">Aiko</text>
+  <text x="480" y="280" text-anchor="middle" fill="#afafaf" font-family="system-ui,sans-serif" font-size="15">Screenshot placeholder</text>
+</svg>
