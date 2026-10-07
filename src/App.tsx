@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AttachmentSheet } from './components/AttachmentSheet';
+import { Chat } from './components/Chat';
 import { Composer } from './components/Composer';
 import { Dialog } from './components/Dialog';
 import { Header } from './components/Header';
@@ -99,7 +100,7 @@ export default function App() {
 
   return (
     <>
-      <div id="app">
+      <Chat>
         <Header
           config={aiko.config}
           chat={aiko.current}
@@ -155,7 +156,7 @@ export default function App() {
           onScrollBottom={() => messageList.current?.scrollBottom(true)}
           toast={toastState.show}
         />
-      </div>
+      </Chat>
 
       <Sidebar
         open={sidebarOpen}

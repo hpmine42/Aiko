@@ -44,7 +44,7 @@ Aiko bildet das mobile Web-Chat-Erlebnis von ChatGPT als vollständig clientseit
 
 ## Local development / Lokal starten
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 20.19+ (or 22.12+) and npm.
 
 ```bash
 npm install
