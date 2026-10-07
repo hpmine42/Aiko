@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG: AikoConfig = {
     }
   ],
   "followFallback": "Gute Frage! Dazu habe ich gerade keine weiteren Details hinterlegt. Magst du die Frage etwas konkreter stellen? ||| Da muss ich passen – mehr kann ich dazu im Moment nicht sagen. Frag gerne etwas anderes!",
-  "knowledge": "## Öffnungszeiten\nGeöffnet ist Montag bis Freitag 9–18 Uhr, Samstag 10–14 Uhr. Sonntags geschlossen.\n\n## Über Aiko\nAiko ist ein Chat-Assistent, der komplett offline in einer einzigen HTML-Datei läuft. Antworten werden über Regeln festgelegt; Rechnen, Einheiten, Datum und Text-Werkzeuge funktionieren wirklich.",
+  "knowledge": "## Öffnungszeiten\nGeöffnet ist Montag bis Freitag 9–18 Uhr, Samstag 10–14 Uhr. Sonntags geschlossen.\n\n## Über Aiko\nAiko ist ein regelbasierter Chat-Assistent, der komplett offline im Browser läuft – ohne Sprachmodell und ohne Netzwerkanfragen. Antworten kommen aus selbst geschriebenen Regeln oder aus eingebauten Werkzeugen; Rechnen, Einheiten, Datum und Text-Werkzeuge liefern echte Ergebnisse.",
   "dictionary": "",
   "memory": [],
   "countdowns": [],
@@ -115,7 +115,7 @@ export const DEFAULT_CONFIG: AikoConfig = {
         "dein name",
         "was bist du"
       ],
-      "response": "Ich bin **Aiko**, ein KI-Assistent. Ich kann Fragen beantworten, Texte schreiben, Dinge erklären und beim Programmieren helfen.\n\nWomit fangen wir an?"
+      "response": "Ich bin **Aiko** – ein regelbasiertes Programm, das komplett offline auf deinem Gerät läuft. Kein Sprachmodell, kein Internet: Meine Antworten kommen aus Regeln und eingebauten Werkzeugen, die wirklich rechnen.\n\nWomit fangen wir an?"
     },
     {
       "id": "p4",
@@ -230,7 +230,7 @@ export const DEFAULT_CONFIG: AikoConfig = {
         "bist du eine ki",
         "bist du ein bot"
       ],
-      "response": "Nein, ich bin kein Mensch – ich bin ein KI-Assistent. Ich kann dir aber trotzdem bei vielen Dingen helfen. 🙂"
+      "response": "Nein, ich bin kein Mensch – und auch keine KI mit Sprachmodell. Ich bin ein Programm, das nach festen Regeln läuft: komplett offline auf deinem Gerät. Überall dort, wo es Regeln und Werkzeuge gibt, helfe ich dir gerne. 🙂"
     },
     {
       "id": "p13",

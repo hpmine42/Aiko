@@ -132,7 +132,7 @@ export function Settings({
                 toast('Profilbild gelöscht');
               }}>Profilbild löschen</button>}
               <label className="item">Dein Name<input className="txt" type="text" placeholder="optional" value={config.userName} onChange={(event) => changeConfig({ ...config, userName: event.target.value.trimStart() })} /></label>
-              <label className="item">Name der KI<input className="txt" type="text" value={config.assistantName} onChange={(event) => changeConfig({ ...config, assistantName: event.target.value || 'Aiko' })} /></label>
+              <label className="item">Name des Assistenten<input className="txt" type="text" value={config.assistantName} onChange={(event) => changeConfig({ ...config, assistantName: event.target.value || 'Aiko' })} /></label>
             </div>
           </Accordion>
 
