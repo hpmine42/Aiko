@@ -39,4 +39,20 @@ describe('React app', () => {
     await waitFor(() => expect(screen.getByText('4')).toBeInTheDocument(), { timeout: 2_000 });
     expect(window.localStorage.getItem('nova.chats.v1')).toContain('2 + 2');
   });
+
+  it('imports rule code sent in the chat and uses the new rule immediately', async () => {
+    window.localStorage.setItem('nova.ui.v1', JSON.stringify({ stream: false, think: false, saveHistory: true, suggest: true, theme: 'dark', calm: true }));
+    render(<App />);
+    const input = screen.getByPlaceholderText('Frag mich alles');
+    fireEvent.change(input, { target: { value: 'regel: =hallo\n\nantwort: Hallo {name}! Wie kann ich helfen?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+
+    await waitFor(() => expect(screen.getByText(/1 Regel hinzugefügt/)).toBeInTheDocument(), { timeout: 2_000 });
+    const savedConfig = JSON.parse(window.localStorage.getItem('nova.config.v1') || '{}') as { pairs?: Array<{ patterns?: string[] }> };
+    expect(savedConfig.pairs?.some((rule) => rule.patterns?.includes('=hallo'))).toBe(true);
+
+    fireEvent.change(input, { target: { value: 'hallo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    await waitFor(() => expect(screen.getByText(/Hallo.*Wie kann ich helfen/)).toBeInTheDocument(), { timeout: 2_000 });
+  });
 });

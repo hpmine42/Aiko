@@ -9,11 +9,13 @@ export function readLocalJson<T>(key: string, fallback: T): T {
   }
 }
 
-export function writeLocalJson(key: string, value: unknown): void {
+export function writeLocalJson(key: string, value: unknown): boolean {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // Private browsing and full stores can reject writes; the app stays usable in memory.
+    return false;
   }
 }
 

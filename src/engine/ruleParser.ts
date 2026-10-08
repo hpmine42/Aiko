@@ -1,5 +1,18 @@
 import type { FollowUpKind, Rule, RuleCodeResult } from '../types';
 
+/**
+ * Detects the explicit rule-code format without treating ordinary chat text
+ * containing a colon as an import. This is intentionally conservative: only
+ * a line starting with `regel:` is considered a rule import from the chat.
+ */
+export function isRuleCode(text: string): boolean {
+  return /(?:^|\n)\s*regel\s*:/i.test(String(text || ''));
+}
+
+export function rulesWithIds(result: RuleCodeResult, timestamp = Date.now()): Rule[] {
+  return result.rules.map((rule, index) => ({ ...rule, id: `p${timestamp}${index}` }));
+}
+
 function splitPipes(value: string): string[] {
   const parts = String(value).split('|').map((part) => part.trim()).filter(Boolean);
   const output: string[] = [];

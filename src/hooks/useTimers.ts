@@ -58,15 +58,18 @@ function beep(): void {
 interface UseTimersOptions {
   currentChatId: () => string | undefined;
   onFire: (timer: TimerState) => void;
+  onStorageError?: () => void;
 }
 
-export function useTimers({ currentChatId, onFire }: UseTimersOptions) {
+export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOptions) {
   const [timers, setTimers] = useState<TimerState[]>(loadTimers);
   const timersRef = useRef(timers);
   const onFireRef = useRef(onFire);
+  const onStorageErrorRef = useRef(onStorageError);
   const currentChatRef = useRef(currentChatId);
   timersRef.current = timers;
   onFireRef.current = onFire;
+  onStorageErrorRef.current = onStorageError;
   currentChatRef.current = currentChatId;
 
   const replace = useCallback((updater: (current: TimerState[]) => TimerState[]) => {
@@ -78,26 +81,35 @@ export function useTimers({ currentChatId, onFire }: UseTimersOptions) {
   }, []);
 
   useEffect(() => {
-    writeLocalJson(LS.timers, timers.map(({ id, end, dur, label, chat, paused, left }) => ({
+    const saved = writeLocalJson(LS.timers, timers.map(({ id, end, dur, label, chat, paused, left }) => ({
       id, end, dur, label, chat, paused, left: paused ? left : undefined,
     })));
+    if (!saved) onStorageErrorRef.current?.();
   }, [timers]);
 
-  useEffect(() => {
-    const tick = window.setInterval(() => {
-      const now = Date.now();
-      const expired = timersRef.current.filter((timer) => !timer.paused && timer.end <= now);
-      if (!expired.length) return;
-      const ids = new Set(expired.map((timer) => timer.id));
-      replace((current) => current.filter((timer) => !ids.has(timer.id)));
-      expired.forEach((timer) => {
-        onFireRef.current(timer);
-        beep();
-        try { navigator.vibrate?.([200, 100, 200]); } catch { /* unsupported */ }
-      });
-    }, 250);
-    return () => window.clearInterval(tick);
+  const checkExpired = useCallback(() => {
+    const now = Date.now();
+    const expired = timersRef.current.filter((timer) => !timer.paused && timer.end <= now);
+    if (!expired.length) return;
+    const ids = new Set(expired.map((timer) => timer.id));
+    replace((current) => current.filter((timer) => !ids.has(timer.id)));
+    expired.forEach((timer) => {
+      onFireRef.current(timer);
+      beep();
+      try { navigator.vibrate?.([200, 100, 200]); } catch { /* unsupported */ }
+    });
   }, [replace]);
+
+  useEffect(() => {
+    const tick = window.setInterval(checkExpired, 250);
+    // Background tabs throttle intervals. Checking immediately after the tab
+    // becomes visible makes a persisted timer reliable without any backend.
+    document.addEventListener('visibilitychange', checkExpired);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener('visibilitychange', checkExpired);
+    };
+  }, [checkExpired]);
 
   const start = useCallback((seconds: number) => {
     const timer: TimerState = {

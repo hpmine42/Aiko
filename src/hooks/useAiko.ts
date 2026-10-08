@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AikoConfig, AssistantMessage, Chat, ChatMessage, EngineResult, TimerState, UiPreferences } from '../types';
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
 import { configureEngine, pickResponse, withName } from '../engine/aikoEngine';
+import { isRuleCode, parseRuleCode, rulesWithIds } from '../engine/ruleParser';
 import { LS, clone, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
 import { readLocalJson, removeLocalValue, writeLocalJson } from './useLocalStorage';
 import { useTimers } from './useTimers';
@@ -60,6 +61,17 @@ export function useAiko({ toast }: UseAikoOptions) {
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [thinking, setThinking] = useState(false);
   const [unreadChat, setUnreadChat] = useState(false);
+  const storageWarningShown = useRef(false);
+
+  const reportStorageError = useCallback(() => {
+    if (storageWarningShown.current) return;
+    storageWarningShown.current = true;
+    toast('Speichern nicht möglich – bitte jetzt ein Backup erstellen');
+  }, [toast]);
+
+  const persist = useCallback((key: string, value: unknown) => {
+    if (!writeLocalJson(key, value)) reportStorageError();
+  }, [reportStorageError]);
 
   const configRef = useRef(config);
   const uiRef = useRef(ui);
@@ -130,20 +142,21 @@ export function useAiko({ toast }: UseAikoOptions) {
   const timers = useTimers({
     currentChatId: () => currentRef.current?.id,
     onFire: appendTimerMessage,
+    onStorageError: reportStorageError,
   });
 
   useEffect(() => {
     configureEngine(config, setConfig, timers.adapter);
   }, [config, setConfig, timers.adapter]);
 
-  useEffect(() => { writeLocalJson(LS.cfg, config); }, [config]);
+  useEffect(() => { persist(LS.cfg, config); }, [config, persist]);
   useEffect(() => {
-    writeLocalJson(LS.ui, ui);
-    writeLocalJson(LS.theme, ui.theme);
-  }, [ui]);
+    persist(LS.ui, ui);
+    persist(LS.theme, ui.theme);
+  }, [persist, ui]);
   useEffect(() => {
     if (!ui.saveHistory) { removeLocalValue(LS.chats); return; }
-    writeLocalJson(LS.chats, chats.filter((chat) => !chat.temp).map((chat) => ({
+    persist(LS.chats, chats.filter((chat) => !chat.temp).map((chat) => ({
       id: chat.id,
       title: chat.title,
       model: chat.model,
@@ -151,7 +164,7 @@ export function useAiko({ toast }: UseAikoOptions) {
       pinned: Boolean(chat.pinned),
       messages: chat.messages,
     })));
-  }, [chats, ui.saveHistory]);
+  }, [chats, persist, ui.saveHistory]);
 
   useEffect(() => {
     const media = window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -214,7 +227,12 @@ export function useAiko({ toast }: UseAikoOptions) {
     finishGeneration(generation, false);
   }, [finishGeneration]);
 
-  const startResponse = useCallback((baseChat: Chat, prompt: string, targetIndex: number | null = null) => {
+  const startResponse = useCallback((
+    baseChat: Chat,
+    prompt: string,
+    targetIndex: number | null = null,
+    forcedText?: string,
+  ) => {
     configureEngine(configRef.current, setConfig, timers.adapter);
     const avoid = (() => {
       if (targetIndex != null) {
@@ -246,7 +264,17 @@ export function useAiko({ toast }: UseAikoOptions) {
       chat.messages[index] = assistant;
     }
     const history = chat.messages.slice(0, index);
-    const result = pickResponse(prompt, avoid, { history }) as EngineResult;
+    const result = forcedText == null
+      ? pickResponse(prompt, avoid, { history }) as EngineResult
+      : {
+          text: forcedText,
+          rule: null,
+          pattern: '',
+          cap: '',
+          index: 0,
+          total: 1,
+          source: 'meta',
+        } as EngineResult;
     assistant.meta[assistant.vi] = {
       rule: result.rule?.id || null,
       cap: result.cap || '',
@@ -358,8 +386,33 @@ export function useAiko({ toast }: UseAikoOptions) {
     chat = { ...chat, title, messages: [...chat.messages, user], ts: Date.now() };
     const firstSaved = !chat.temp && !chatsRef.current.some((entry) => entry.id === chat.id);
     storeCurrent(chat, firstSaved);
+
+    // Rule code can be pasted directly into the chat as well as into Settings.
+    // Keep this detection deliberately explicit so ordinary messages such as
+    // “antwort: …” are not unexpectedly imported.
+    if (isRuleCode(prompt)) {
+      const parsed = parseRuleCode(prompt);
+      if (!parsed.errors.length && parsed.rules.length) {
+        const added = rulesWithIds(parsed);
+        const nextConfig = { ...configRef.current, pairs: [...configRef.current.pairs, ...added] };
+        configRef.current = nextConfig;
+        setConfig(nextConfig);
+        const labels = added
+          .flatMap((rule) => rule.patterns)
+          .slice(0, 3)
+          .map((pattern) => `\`${pattern}\``)
+          .join(', ');
+        const count = added.length === 1 ? '1 Regel' : `${added.length} Regeln`;
+        startResponse(chat, prompt, null, `✅ ${count} hinzugefügt.\n\nAuslöser: ${labels || 'eigene Regel'}`);
+      } else {
+        const details = parsed.errors.slice(0, 4).map((error) => `- ${error}`).join('\n');
+        startResponse(chat, prompt, null, `Ich habe Regel-Code erkannt, aber noch nichts hinzugefügt.\n\n${details || '- Bitte ergänze mindestens „regel:“ und „antwort:“.'}`);
+      }
+      return;
+    }
+
     startResponse(chat, prompt);
-  }, [startResponse, storeCurrent]);
+  }, [setConfig, startResponse, storeCurrent]);
 
   const newChat = useCallback(() => {
     stop();
