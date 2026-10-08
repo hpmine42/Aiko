@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import type { AikoConfig, Rule } from '../types';
+import type { AikoConfig } from '../types';
 import { RULE_CODE_DOC } from '../data/ruleCodeDoc';
-import { parseRuleCode } from '../engine/ruleParser';
+import { parseRuleCode, rulesWithIds } from '../engine/ruleParser';
 import { copyText } from '../utils/browser';
 import { InfoBox } from './InfoBox';
 
@@ -24,8 +24,7 @@ export function CodeImport({ config, onConfig, toast }: CodeImportProps) {
 
   const add = () => {
     if (!ready) return;
-    const timestamp = Date.now();
-    const rules: Rule[] = result.rules.map((rule, index) => ({ ...rule, id: `p${timestamp}${index}` }));
+    const rules = rulesWithIds(result);
     onConfig({ ...config, pairs: [...config.pairs, ...rules] });
     setDraft('');
     toast(rules.length === 1 ? 'Regel hinzugefügt' : `${rules.length} Regeln hinzugefügt`);

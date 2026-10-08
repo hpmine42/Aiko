@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AikoConfig, Chat } from '../types';
 import { norm, plain, withName } from '../engine/aikoEngine';
 import { Icon } from './Icon';
@@ -55,6 +55,19 @@ export function Sidebar({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const anchorRef = useRef<HTMLElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      previousFocus.current?.focus();
+      previousFocus.current = null;
+      return undefined;
+    }
+    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = window.requestAnimationFrame(() => searchRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   const items = useMemo(() => {
     const search = norm(query);
@@ -68,12 +81,13 @@ export function Sidebar({
 
   return (
     <>
-      <button type="button" className={`scrim${open ? ' on' : ''}`} aria-label="Seitenleiste schließen" onClick={onClose} />
-      <aside id="side" className={open ? 'open' : ''} aria-label="Seitenleiste" aria-hidden={!open}>
+      <button type="button" className={`scrim${open ? ' on' : ''}`} aria-label="Seitenleiste schließen" aria-hidden={!open} tabIndex={open ? 0 : -1} onClick={onClose} />
+      <aside id="side" className={open ? 'open' : ''} aria-label="Seitenleiste" aria-hidden={!open} inert={!open ? true : undefined}>
         <div className="stop">
           <label className="search">
             <Icon name="search" />
             <input
+              ref={searchRef}
               id="search"
               type="search"
               placeholder="Chats durchsuchen"

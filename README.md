@@ -97,7 +97,14 @@ aktiv: ja
 
 `regel:` und `antwort:` sind Pflicht, alles andere optional; `---` trennt mehrere Regeln, `#` beginnt einen Kommentar.
 
-**Tipp:** In den Einstellungen liegt unter *Code-Format – für eine KI kopieren* ein fertiger Prompt ([`src/data/ruleCodeDoc.ts`](src/data/ruleCodeDoc.ts)). Du kannst ihn in eine KI deiner Wahl einfügen und dir daraus Regel-Code erzeugen lassen, den du über *Regel-Code importieren* einsetzt. Wichtig: Aiko selbst sendet dabei nichts – dieser Umweg passiert außerhalb der App und ist deine Entscheidung. Ungültige Zeilen werden beim Import einzeln gemeldet, statt still zu verschwinden.
+Regel-Code kann auch direkt im Chat gesendet werden. Sobald eine Nachricht mit `regel:` beginnt, prüft Aiko den Code, fügt gültige Regeln hinzu und bestätigt die Anzahl der importierten Regeln. Bei Fehlern wird nichts übernommen und Aiko zeigt die betroffenen Zeilen an:
+
+```text
+regel: =hallo
+antwort: Hallo {name}! Wie kann ich helfen?
+```
+
+**Tipp:** In den Einstellungen liegt unter *Code-Format – für eine KI kopieren* ein fertiger Prompt ([`src/data/ruleCodeDoc.ts`](src/data/ruleCodeDoc.ts)). Du kannst ihn in eine KI deiner Wahl einfügen und dir daraus Regel-Code erzeugen lassen, den du entweder über *Regel-Code importieren* oder direkt im Chat einsetzt. Wichtig: Aiko selbst sendet dabei nichts – dieser Umweg passiert außerhalb der App und ist deine Entscheidung. Ungültige Zeilen werden beim Import einzeln gemeldet, statt still zu verschwinden.
 
 ---
 
@@ -122,7 +129,7 @@ Vite gibt die lokale Adresse aus. Einstellungen, Regeln und Chats werden ausschl
 | `npm run build` | Typprüfung + statischer Build nach `dist/` |
 | `npm run preview` | gebauten Stand lokal ausliefern |
 
-`dist/` ist eine rein statische Seite und läuft auf jedem Webspace, hinter jedem Reverse-Proxy oder komplett lokal.
+`dist/` ist eine rein statische Seite und läuft auf jedem Webspace, hinter jedem Reverse-Proxy oder komplett lokal. Im Produktions-Build registriert Aiko zusätzlich einen Service Worker und kann als installierbare PWA genutzt werden. Nach dem ersten Laden bleibt die App auch beim nächsten Aufruf ohne Netz verfügbar.
 
 ### GitHub Pages
 

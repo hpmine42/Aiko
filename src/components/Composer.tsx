@@ -28,6 +28,7 @@ export function Composer({ busy, showToBottom, onSend, onStop, onAttachment, onS
   const [value, setValue] = useState('');
   const [recording, setRecording] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [commandIndex, setCommandIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
@@ -37,6 +38,18 @@ export function Composer({ busy, showToBottom, onSend, onStop, onAttachment, onS
       return query.length < 2 || command.toLocaleLowerCase('de-DE').includes(query);
     })
     : [];
+
+  useEffect(() => {
+    setCommandIndex((index) => commands.length ? Math.min(index, commands.length - 1) : 0);
+  }, [commands.length, value]);
+
+  const chooseCommand = (index: number) => {
+    const command = commands[index];
+    if (!command) return;
+    setValue(command[0].replace(/…$/, ''));
+    setCommandOpen(false);
+    textareaRef.current?.focus();
+  };
 
   const resize = () => {
     const textarea = textareaRef.current;
@@ -100,17 +113,14 @@ export function Composer({ busy, showToBottom, onSend, onStop, onAttachment, onS
       ><Icon name="arrowD" /></button>
       <div className="cwrap">
         <div id="cmdpop" className={commandOpen && commands.length ? 'on' : ''}>
-          {commands.map(([command, description]) => (
+          {commands.map(([command, description], index) => (
             <button
               type="button"
-              className="ci"
+              className={`ci${index === commandIndex ? ' selected' : ''}`}
               key={command}
+              aria-selected={index === commandIndex}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setValue(command.replace(/…$/, ''));
-                setCommandOpen(false);
-                textareaRef.current?.focus();
-              }}
+              onClick={() => chooseCommand(index)}
             >
               <b>{command}</b><span>{description}</span>
             </button>
@@ -134,6 +144,28 @@ export function Composer({ busy, showToBottom, onSend, onStop, onAttachment, onS
               setCommandOpen(event.target.value.trim().startsWith('/'));
             }}
             onKeyDown={(event) => {
+              if (commandOpen && commands.length) {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  setCommandIndex((index) => (index + 1) % commands.length);
+                  return;
+                }
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  setCommandIndex((index) => (index - 1 + commands.length) % commands.length);
+                  return;
+                }
+                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  chooseCommand(commandIndex);
+                  return;
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setCommandOpen(false);
+                  return;
+                }
+              }
               const fine = window.matchMedia?.('(pointer:fine)').matches;
               if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && fine) {
                 event.preventDefault();

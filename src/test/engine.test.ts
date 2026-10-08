@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
 import { RULE_CODE_DOC } from '../data/ruleCodeDoc';
 import { configureEngine, pickResponse, Qr } from '../engine/aikoEngine';
-import { parseRuleCode } from '../engine/ruleParser';
+import { isRuleCode, parseRuleCode, rulesWithIds } from '../engine/ruleParser';
 import { clone } from '../utils/config';
 import type { AikoConfig, TimerState } from '../types';
 
@@ -82,5 +82,12 @@ describe('rule code import', () => {
     const parsed = parseRuleCode('regel: hallo\nunbekannt: wert');
     expect(parsed.errors.join(' ')).toMatch(/Zeile 2/);
     expect(parsed.errors.join(' ')).toContain('antwort:');
+  });
+
+  it('recognises only explicit rule-code messages for chat import', () => {
+    expect(isRuleCode('regel: =hallo\nantwort: Hallo')).toBe(true);
+    expect(isRuleCode('antwort: Das ist nur normaler Text')).toBe(false);
+    const rules = rulesWithIds(parseRuleCode('regel: =hallo\nantwort: Hallo'), 123);
+    expect(rules[0]).toMatchObject({ id: 'p1230', patterns: ['=hallo'], response: 'Hallo' });
   });
 });

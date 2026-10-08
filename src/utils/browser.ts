@@ -67,17 +67,21 @@ export function exportChatMarkdown(chat: Chat, assistantName: string): void {
   downloadBlob(lines.join('\n'), 'text/markdown;charset=utf-8', `${filename}.md`);
 }
 
-export async function shareText(text: string): Promise<boolean> {
-  try {
-    if (navigator.share) {
+export type ShareResult = 'shared' | 'copied' | 'cancelled';
+
+export async function shareText(text: string): Promise<ShareResult> {
+  if (navigator.share) {
+    try {
       await navigator.share({ text });
-      return true;
+      return 'shared';
+    } catch {
+      // A cancelled native share is not an error and must not claim that the
+      // text was copied. The caller can give the user an honest status.
+      return 'cancelled';
     }
-  } catch {
-    return false;
   }
   await copyText(text);
-  return false;
+  return 'copied';
 }
 
 export function resizeAvatar(file: File, size = 128): Promise<string> {

@@ -110,8 +110,9 @@ export default function App() {
           onToggleTemporary={aiko.toggleTemporary}
           onNewChat={aiko.newChat}
           onShare={async () => {
-            const shared = await shareText(transcript());
-            if (!shared) toastState.show('Link zum Teilen ist nicht verfügbar – Text kopiert');
+            const result = await shareText(transcript());
+            if (result === 'copied') toastState.show('Text kopiert');
+            else if (result === 'cancelled') toastState.show('Teilen abgebrochen');
           }}
           onExport={() => { exportChatMarkdown(aiko.current, aiko.config.assistantName); toastState.show('Chat exportiert'); }}
           onRename={() => {

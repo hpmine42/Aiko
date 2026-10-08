@@ -117,10 +117,10 @@ export function Settings({
 
   return (
     <>
-      <section className="page open" id="setPage">
+      <section className="page open" id="setPage" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="ph">
           <button type="button" className="ib" aria-label="Schließen" onClick={onClose}><Icon name="close" /></button>
-          <h2>Einstellungen</h2><span style={{ width: 40 }} />
+          <h2 id="settings-title">Einstellungen</h2><span style={{ width: 40 }} />
         </div>
         <div className="pb"><div className="pbi">
           <Accordion id="profil" title="Profil" defaultOpen>
@@ -269,10 +269,10 @@ export function Settings({
       )}
 
       {jsonOpen && (
-        <section className="page z2 open" id="jsonPage">
+        <section className="page z2 open" id="jsonPage" role="dialog" aria-modal="true" aria-labelledby="json-title">
           <div className="ph">
             <button type="button" className="ib" aria-label="Zurück" onClick={() => setJsonOpen(false)}><Icon name="chevL" /></button>
-            <h2>Import / Export</h2><span style={{ width: 40 }} />
+            <h2 id="json-title">Import / Export</h2><span style={{ width: 40 }} />
           </div>
           <div className="pb"><div className="pbi">
             <div className="help" style={{ paddingTop: 4 }}>Hier stehen alle Regeln als JSON. Kopiere den Text zum Sichern. Oder füge eine gesicherte Version ein und tippe auf „Übernehmen“.</div>
@@ -307,10 +307,17 @@ function Accordion({ id, title, children, defaultOpen = false }: { id: string; t
   const [open, setOpen] = useState(defaultOpen);
   return (
     <>
-      <button id={id === 'rules' ? 'rulesSec' : undefined} type="button" className={`sec h${open ? '' : ' closed'}`} onClick={() => setOpen((value) => !value)}>
+      <button
+        id={id === 'rules' ? 'rulesSec' : undefined}
+        type="button"
+        className={`sec h${open ? '' : ' closed'}`}
+        aria-expanded={open}
+        aria-controls={`${id}-content`}
+        onClick={() => setOpen((value) => !value)}
+      >
         <span>{title}</span><Icon name="chevD" />
       </button>
-      <div className={`accb${open ? '' : ' hidden'}`}>{children}</div>
+      <div id={`${id}-content`} className={`accb${open ? '' : ' hidden'}`}>{children}</div>
     </>
   );
 }

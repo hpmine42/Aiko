@@ -58,10 +58,10 @@ export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, 
   }
 
   return (
-    <section className="page z2 open" id="rulePage">
+    <section className="page z2 open" id="rulePage" role="dialog" aria-modal="true" aria-labelledby="rule-title">
       <div className="ph">
         <button type="button" className="ib" aria-label="Zurück" onClick={close}><Icon name="chevL" /></button>
-        <h2>{isNew ? 'Neue Regel' : 'Regel bearbeiten'}</h2>
+        <h2 id="rule-title">{isNew ? 'Neue Regel' : 'Regel bearbeiten'}</h2>
         <button type="button" className="ib" aria-label="Regel löschen" onClick={async () => {
           if (await onDelete(rule)) onClose();
         }}><Icon name="trash" /></button>

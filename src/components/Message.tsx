@@ -62,8 +62,9 @@ function UserMessage({ message, index, onEdit, toast, generating }: { message: E
       <div className="uacts">
         <button type="button" className="ab" aria-label="Kopieren" onClick={() => { void copyText(message.content); toast('Kopiert'); }}><Icon name="copy" /></button>
         <button type="button" className="ab ux" aria-label="Teilen" onClick={async () => {
-          const shared = await shareText(message.content);
-          if (!shared) toast('Link zum Teilen ist nicht verfügbar – Text kopiert');
+          const result = await shareText(message.content);
+          if (result === 'copied') toast('Text kopiert');
+          else if (result === 'cancelled') toast('Teilen abgebrochen');
         }}><Icon name="share" /></button>
         <button type="button" className="ab ux" aria-label="Nachricht bearbeiten" disabled={generating} onClick={() => setEditing(true)}><Icon name="edit" /></button>
       </div>
@@ -127,7 +128,7 @@ function AssistantMessageView({
   if (generating && !raw) {
     return (
       <div className="msg ai" data-i={index}>
-        {thinking ? <div className="thinking">Denkt nach</div> : <div className="pulse" />}
+        {thinking ? <div className="thinking" role="status" aria-live="polite">Denkt nach</div> : <div className="pulse" role="status" aria-label="Antwort wird erstellt" />}
       </div>
     );
   }
@@ -163,8 +164,9 @@ function AssistantMessageView({
             <Icon name={message.fb === 'up' ? 'thumbU' : message.fb === 'down' ? 'thumbD' : 'thumbs'} />
           </button>
           <button type="button" className="ab" aria-label="Teilen" onClick={async () => {
-            const shared = await shareText(plainCopy(rendered));
-            if (!shared) toast('Link zum Teilen ist nicht verfügbar – Text kopiert');
+            const result = await shareText(plainCopy(rendered));
+            if (result === 'copied') toast('Text kopiert');
+            else if (result === 'cancelled') toast('Teilen abgebrochen');
           }}><Icon name="share" /></button>
           <button type="button" className="ab" aria-label="Neu generieren" onClick={() => onRegenerate(index)}><Icon name="regen" /></button>
           <button ref={moreRef} type="button" className="ab" aria-label="Weitere Aktionen" onClick={() => setMoreOpen((value) => !value)}><Icon name="dots" /></button>
