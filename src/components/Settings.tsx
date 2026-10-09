@@ -3,9 +3,10 @@ import type { AikoConfig, Chat, Rule, RuleTestResult, UiPreferences } from '../t
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
 import { CMD_LIST, CMD_MORE } from '../data/commands';
 import { SOURCE_LABEL, configureEngine, plain, ruleTitle, runRuleTests, variantsOf, withName } from '../engine/aikoEngine';
-import { clone, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
+import { BACKUP_FORMAT_VERSION, MAX_BACKUP_SIZE_BYTES, clone, normalizeBackup, normalizeConfig, normalizeUi } from '../utils/config';
 import { copyText, downloadBlob, resizeAvatar } from '../utils/browser';
 import type { DialogOptions } from './Dialog';
+import { useModalFocus } from '../hooks/useModalFocus';
 import { CodeImport } from './CodeImport';
 import { Icon } from './Icon';
 import { RuleEditor } from './RuleEditor';
@@ -23,6 +24,7 @@ interface SettingsProps {
   confirm: (options: DialogOptions) => Promise<boolean>;
   toast: (message: string) => void;
   initialRulesOpen?: boolean;
+  modalOpen?: boolean;
 }
 
 export function Settings({
@@ -38,12 +40,15 @@ export function Settings({
   confirm,
   toast,
   initialRulesOpen,
+  modalOpen = false,
 }: SettingsProps) {
   const [ruleIndex, setRuleIndex] = useState<number | null>(null);
   const [newRule, setNewRule] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [testReport, setTestReport] = useState<RuleTestResult[] | null>(null);
+  const settingsRef = useModalFocus<HTMLElement>(open, { onEscape: onClose });
+  const jsonRef = useModalFocus<HTMLElement>(jsonOpen, { onEscape: () => setJsonOpen(false) });
   const avatarFile = useRef<HTMLInputElement>(null);
   const backupFile = useRef<HTMLInputElement>(null);
   const jsonFile = useRef<HTMLInputElement>(null);
@@ -74,26 +79,39 @@ export function Settings({
   };
 
   const backup = () => {
-    const data = { app: 'nova', version: 2, created: new Date().toISOString(), config, ui, chats: chats.filter((chat) => !chat.temp) };
-    downloadBlob(JSON.stringify(data, null, 2), 'application/json', `nova-backup-${new Date().toISOString().slice(0, 10)}.json`);
+    const data = {
+      app: 'aiko',
+      version: BACKUP_FORMAT_VERSION,
+      created: new Date().toISOString(),
+      config,
+      // Speech recognition consent belongs to this browser/device and must not
+      // be transferred by restoring a backup elsewhere.
+      ui: { ...ui, speechRecognition: false },
+      chats: chats.filter((chat) => !chat.temp),
+    };
+    const json = JSON.stringify(data, null, 2);
+    if (new Blob([json]).size > MAX_BACKUP_SIZE_BYTES) {
+      toast('Backup zu groß · bitte zuerst ältere Chats löschen oder einzeln exportieren');
+      return;
+    }
+    downloadBlob(json, 'application/json', `aiko-backup-${new Date().toISOString().slice(0, 10)}.json`);
     toast('Backup gespeichert');
   };
 
   const restore = async (file: File) => {
     try {
-      const parsed = JSON.parse(await file.text()) as { config?: unknown; ui?: unknown; chats?: unknown };
-      if (!parsed || typeof parsed !== 'object' || !parsed.config) { toast('Das ist kein Nova-Backup'); return; }
-      const nextConfig = normalizeConfig(parsed.config);
-      const restoredChats = Array.isArray(parsed.chats)
-        ? parsed.chats.map((chat) => normalizeChat(chat, nextConfig)).filter((chat): chat is Chat => Boolean(chat?.messages.length) && !chat?.temp)
-        : [];
+      if (file.size > MAX_BACKUP_SIZE_BYTES) {
+        toast('Backup zu groß · maximal 20 MB');
+        return;
+      }
+      const restored = normalizeBackup(JSON.parse(await file.text()));
       if (!(await confirm({ title: 'Backup wiederherstellen?', text: 'Regeln, Einstellungen und Chats werden durch den Inhalt des Backups ersetzt.', ok: 'Wiederherstellen', danger: true }))) return;
-      changeConfig(nextConfig);
-      if (parsed.ui) onUi(normalizeUi(parsed.ui));
-      if (Array.isArray(parsed.chats)) onChats(restoredChats);
-      toast(`Wiederhergestellt · ${restoredChats.length} Chats, ${nextConfig.pairs.length} Regeln`);
-    } catch {
-      toast('Keine gültige Backup-Datei');
+      changeConfig(restored.config);
+      if (restored.ui) onUi(restored.ui);
+      if (restored.chats) onChats(restored.chats);
+      toast(`Wiederhergestellt · ${restored.chats?.length ?? chats.length} Chats, ${restored.config.pairs.length} Regeln`);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Keine gültige Backup-Datei');
     }
   };
 
@@ -117,7 +135,7 @@ export function Settings({
 
   return (
     <>
-      <section className="page open" id="setPage" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <section ref={settingsRef} className="page open" id="setPage" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabIndex={-1} aria-hidden={ruleIndex != null || jsonOpen || modalOpen} inert={ruleIndex != null || jsonOpen || modalOpen ? true : undefined}>
         <div className="ph">
           <button type="button" className="ib" aria-label="Schließen" onClick={onClose}><Icon name="close" /></button>
           <h2 id="settings-title">Einstellungen</h2><span style={{ width: 40 }} />
@@ -156,6 +174,8 @@ export function Settings({
               <SwitchItem label="Kurz nachdenken vor der Antwort" checked={ui.think} onChange={(think) => onUi({ ...ui, think })} />
               <SwitchItem label="Vorschlags-Buttons unter Antworten" checked={ui.suggest} onChange={(suggest) => onUi({ ...ui, suggest })} />
               <SwitchItem label="Chatverlauf speichern" checked={ui.saveHistory} onChange={(saveHistory) => onUi({ ...ui, saveHistory })} />
+              <SwitchItem label="Diktieren erlauben (Browser-Spracherkennung)" checked={ui.speechRecognition} onChange={(speechRecognition) => onUi({ ...ui, speechRecognition })} />
+              <div className="help">Je nach Browser kann deine Stimme durch einen externen Sprachdienst verarbeitet werden. Aiko selbst sendet keine Audiodaten. Die Berechtigung wird nicht in Backups übernommen.</div>
             </div>
           </Accordion>
 
@@ -265,11 +285,12 @@ export function Settings({
           onClose={() => { setRuleIndex(null); setNewRule(false); }}
           onDelete={deleteRule}
           toast={toast}
+          modalOpen={modalOpen}
         />
       )}
 
       {jsonOpen && (
-        <section className="page z2 open" id="jsonPage" role="dialog" aria-modal="true" aria-labelledby="json-title">
+        <section ref={jsonRef} className="page z2 open" id="jsonPage" role="dialog" aria-modal="true" aria-labelledby="json-title" tabIndex={-1}>
           <div className="ph">
             <button type="button" className="ib" aria-label="Zurück" onClick={() => setJsonOpen(false)}><Icon name="chevL" /></button>
             <h2 id="json-title">Import / Export</h2><span style={{ width: 40 }} />
@@ -278,9 +299,10 @@ export function Settings({
             <div className="help" style={{ paddingTop: 4 }}>Hier stehen alle Regeln als JSON. Kopiere den Text zum Sichern. Oder füge eine gesicherte Version ein und tippe auf „Übernehmen“.</div>
             <div className="field"><textarea className="mono" rows={16} spellCheck={false} style={{ marginTop: 12 }} value={jsonText} onChange={(event) => setJsonText(event.target.value)} /></div>
             <div className="btns">
-              <button type="button" className="btn" onClick={() => { void copyText(jsonText); toast('Kopiert'); }}>Kopieren</button>
+              <button type="button" className="btn" onClick={async () => { toast(await copyText(jsonText) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); }}>Kopieren</button>
               <button type="button" className="btn pri" onClick={() => {
                 try {
+                  if (new Blob([jsonText]).size > MAX_BACKUP_SIZE_BYTES) throw new Error('Import zu groß · maximal 20 MB');
                   let parsed: unknown = JSON.parse(jsonText);
                   if (Array.isArray(parsed)) parsed = { pairs: parsed };
                   if (!parsed || typeof parsed !== 'object') throw new Error('Kein gültiges Objekt');
@@ -294,7 +316,10 @@ export function Settings({
             </div>
             <input ref={jsonFile} type="file" accept=".json,application/json,text/plain" hidden onChange={async (event) => {
               const file = event.target.files?.[0]; event.target.value = '';
-              if (file) { setJsonText(await file.text()); toast('Datei geladen – tippe auf „Übernehmen“'); }
+              if (!file) return;
+              if (file.size > MAX_BACKUP_SIZE_BYTES) { toast('Datei zu groß · maximal 20 MB'); return; }
+              try { setJsonText(await file.text()); toast('Datei geladen – tippe auf „Übernehmen“'); }
+              catch { toast('Datei konnte nicht gelesen werden'); }
             }} />
           </div></div>
         </section>

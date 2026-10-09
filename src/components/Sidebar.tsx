@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { AikoConfig, Chat } from '../types';
 import { norm, plain, withName } from '../engine/aikoEngine';
+import { useModalFocus } from '../hooks/useModalFocus';
 import { Icon } from './Icon';
 import { Popover } from './Popover';
 
@@ -32,7 +33,7 @@ function groupLabel(timestamp: number): string {
 
 function searchableText(chat: Chat): string {
   return chat.messages.map((message) => message.role === 'user'
-    ? message.content
+    ? `${message.content} ${message.attachments?.map((file) => file.name).join(' ') || ''}`
     : plain(withName(message.variants[message.vi] || ''))).join(' ');
 }
 
@@ -55,19 +56,8 @@ export function Sidebar({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const anchorRef = useRef<HTMLElement | null>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const previousFocus = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      previousFocus.current?.focus();
-      previousFocus.current = null;
-      return undefined;
-    }
-    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const frame = window.requestAnimationFrame(() => searchRef.current?.focus());
-    return () => window.cancelAnimationFrame(frame);
-  }, [open]);
+  const firstActionRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useModalFocus<HTMLElement>(open, { onEscape: onClose, initialFocusRef: firstActionRef });
 
   const items = useMemo(() => {
     const search = norm(query);
@@ -81,15 +71,15 @@ export function Sidebar({
 
   return (
     <>
-      <button type="button" className={`scrim${open ? ' on' : ''}`} aria-label="Seitenleiste schließen" aria-hidden={!open} tabIndex={open ? 0 : -1} onClick={onClose} />
-      <aside id="side" className={open ? 'open' : ''} aria-label="Seitenleiste" aria-hidden={!open} inert={!open ? true : undefined}>
+      <button type="button" className={`scrim${open ? ' on' : ''}`} aria-label="Seitenleiste schließen" aria-hidden={!open} tabIndex={-1} onClick={onClose} />
+      <aside ref={sidebarRef} id="side" className={open ? 'open' : ''} role="dialog" aria-modal="true" aria-label="Seitenleiste" aria-hidden={!open} inert={!open ? true : undefined} tabIndex={-1}>
         <div className="stop">
           <label className="search">
             <Icon name="search" />
             <input
-              ref={searchRef}
               id="search"
               type="search"
+              aria-label="Chats durchsuchen"
               placeholder="Chats durchsuchen"
               autoComplete="off"
               value={query}
@@ -98,7 +88,7 @@ export function Sidebar({
           </label>
         </div>
         <div className="navw">
-          <button type="button" className="nav" onClick={() => { onNewChat(); onClose(); }}>
+          <button ref={firstActionRef} type="button" className="nav" onClick={() => { onNewChat(); onClose(); }}>
             <Icon name="newchat" />Neuer Chat
           </button>
           <button type="button" className="nav" onClick={() => { onSettings(); onClose(); }}>

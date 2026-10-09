@@ -56,7 +56,7 @@ export function Header({
         type="button"
         className="model"
         id="bModel"
-        aria-label="Modell wählen"
+        aria-label="Antwortmodus wählen"
         aria-expanded={modelOpen}
         onClick={() => { setModelOpen((value) => !value); setChatOpen(false); }}
       >
@@ -84,7 +84,8 @@ export function Header({
       </button>
 
       <Popover open={modelOpen} anchor={modelRef} onClose={() => setModelOpen(false)}>
-        <div className="phead">Modell</div>
+        <div className="phead">Antwortmodus</div>
+        <div className="mode-info">Nur Tippgeschwindigkeit und Antwortpause – hier werden keine KI-Modelle gewählt.</div>
         {config.models.map((model) => (
           <button
             type="button"
@@ -93,10 +94,10 @@ export function Header({
             onClick={() => {
               onSelectModel(model.id);
               setModelOpen(false);
-              toast(`${config.assistantName} ${model.label} ausgewählt`);
+              toast(`Antwortmodus „${model.label}“ ausgewählt`);
             }}
           >
-            <span className="tx">{config.assistantName} {model.label}<span className="desc">{model.desc}</span></span>
+            <span className="tx">{model.label}<span className="desc">{model.desc}</span></span>
             {model.id === chat.model && <span className="ck"><Icon name="check" /></span>}
           </button>
         ))}

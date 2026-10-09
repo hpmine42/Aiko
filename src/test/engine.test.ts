@@ -4,6 +4,7 @@ import { RULE_CODE_DOC } from '../data/ruleCodeDoc';
 import { configureEngine, pickResponse, Qr } from '../engine/aikoEngine';
 import { isRuleCode, parseRuleCode, rulesWithIds } from '../engine/ruleParser';
 import { clone } from '../utils/config';
+import { isSafeRuleRegex } from '../utils/safeRegex';
 import type { AikoConfig, TimerState } from '../types';
 
 let config: AikoConfig;
@@ -37,6 +38,16 @@ describe('Aiko behaviour engine', () => {
     expect(pickResponse('ich bin Ada', null, null).text).toBe('Hallo Ada');
     expect(pickResponse('ich mag Pizza', null, null).text).toBe('Ich mag Pizza auch!');
     expect(pickResponse('morgen Wetter?', null, null).text).toBe('Beides');
+  });
+
+  it('rejects potentially catastrophic user regexes without blocking the engine', () => {
+    expect(isSafeRuleRegex('~/(a+)+$/')).toBe(false);
+    expect(isSafeRuleRegex('~/a*a*a*b/')).toBe(false);
+    expect(isSafeRuleRegex('~/^hallo\\s+welt$/i')).toBe(true);
+    config.pairs = [{ id: 'unsafe', enabled: true, patterns: ['~/(a+)+$/'], response: 'Nicht ausführen', priority: 0 }];
+    configureEngine(config);
+    expect(pickResponse(`${'a'.repeat(10_000)}!`, null, null).rule).toBeNull();
+    expect(parseRuleCode('regel: ~/(a+)+$/\nantwort: Unsicher').errors.join(' ')).toContain('zu komplex');
   });
 
   it('runs meta answers before knowledge fallback', () => {

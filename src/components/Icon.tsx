@@ -31,6 +31,7 @@ export const ICON_PATHS = {
   camera:'<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.5-2h4.4l1.5 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
   image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 16-5-5-9 8.5"/>',
   file:'<path d="M14 3.5H7.5A2.5 2.5 0 0 0 5 6v12a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 18V8.5z"/><path d="M14 3.5v5h5"/>',
+  code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
   pin:'<path d="M9 4h6l-1 6 3.5 3.5v1.5H6.5v-1.5L10 10z"/><path d="M12 15v5"/>',
   rules:'<path d="M4 6h10M4 12h7M4 18h5"/><path d="M14.5 19.5 20 14l-2-2-5.5 5.5-.5 2.5z"/>'
 } as const;

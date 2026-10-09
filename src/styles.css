@@ -48,6 +48,11 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stro
 .msg{margin:0 0 22px}
 .msg.user{display:flex;flex-direction:column;align-items:flex-end;margin:0 0 14px;animation:fade .22s ease both}
 .ubub{background:var(--user);color:var(--usertext);padding:10px 16px;border-radius:24px;max-width:84%;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.5}
+.uattachments{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;max-width:88%;margin-top:6px}
+.uattachment{display:flex;align-items:center;gap:8px;max-width:100%;padding:8px 11px;border-radius:13px;background:var(--user);color:var(--usertext);font-size:13px;line-height:1.3}
+.uattachment svg{width:18px;height:18px;opacity:.8}
+.uattachment-name{min-width:0;overflow-wrap:anywhere;font-weight:500}
+.uattachment-size{display:block;margin-top:2px;opacity:.72;font-size:11px}
 .uacts{display:flex;gap:2px;margin:0 -3px 0 0}
 body.busy .uacts .ux{display:none}
 .editbox{width:100%;background:var(--composer);border:1px solid var(--cborder);border-radius:24px;padding:12px 14px}
@@ -115,6 +120,20 @@ body.busy .uacts .ux{display:none}
 body.emptychat .disc{display:none}
 #composer{background:var(--composer);border:1px solid var(--cborder);border-radius:24px;padding:12px 7px 7px;cursor:text}
 [data-theme=light] #composer{box-shadow:0 4px 16px rgba(0,0,0,.05)}
+.attachment-list{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding:0 7px 12px;scrollbar-width:none}
+.attachment-list::-webkit-scrollbar{display:none}
+.attachment-card{position:relative;flex:0 0 auto}
+.attachment-card-file{width:min(410px,calc(100vw - 92px));min-height:108px;display:flex;align-items:center;gap:15px;padding:18px 42px 18px 18px;border:1px solid var(--line);border-radius:24px;background:var(--surface2)}
+.attachment-file-icon{width:70px;height:68px;display:grid;place-items:center;flex:none}
+.attachment-file-icon svg{width:30px;height:30px;color:var(--text)}
+.attachment-file-meta{min-width:0;display:flex;flex-direction:column;gap:5px}
+.attachment-file-meta>span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere;font-size:16px;font-weight:600;line-height:1.28}
+.attachment-file-meta small{color:var(--mute);font-size:14px}
+.attachment-card-image{width:min(244px,65vw);aspect-ratio:1;overflow:hidden;border-radius:22px;background:var(--surface2);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.attachment-card-image img{display:block;width:100%;height:100%;object-fit:cover}
+.attachment-remove{position:absolute;top:-9px;right:-7px;z-index:1;width:30px;height:30px;display:grid;place-items:center;border:2px solid var(--composer);border-radius:50%;background:#161616;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.attachment-remove svg{width:16px;height:16px;stroke-width:2.2}
+.attachment-remove:active{transform:scale(.94)}
 #in{display:block;width:100%;border:0;outline:0;background:none;resize:none;font-size:16px;line-height:1.5;padding:0 8px 8px;max-height:200px;min-height:32px}
 #in::placeholder{color:var(--mute)}
 .crow{display:flex;align-items:center;gap:8px}
@@ -167,11 +186,14 @@ body.emptychat .disc{display:none}
 .pi .desc{display:block;font-size:13px;color:var(--mute);margin-top:1px}
 .pi .ck svg{width:18px;height:18px}
 .phead{font-size:13px;color:var(--mute);padding:8px 12px 4px}
+.mode-info{max-width:260px;padding:4px 12px 8px;color:var(--mute);font-size:12px;line-height:1.45}
 
 .asheet{position:fixed;left:0;right:0;bottom:0;z-index:62;background:var(--side);border-radius:22px 22px 0 0;padding:8px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
 [data-theme=dark] .asheet{background:#2a2a2a}
 .asheet.open{transform:none}
 .grab{width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
+.asheet-title{margin:0 0 12px;text-align:center;font-size:16px;font-weight:600}
+.asheet-note{margin:0;padding:4px 2px 2px;text-align:center;color:var(--mute);font-size:12px;line-height:1.5}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
 .tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;background:var(--hover);font-size:14px}
 .tile svg{width:24px;height:24px}

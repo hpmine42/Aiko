@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AikoConfig, AssistantMessage, Chat, ChatMessage, EngineResult, TimerState, UiPreferences } from '../types';
+import type { AikoConfig, AssistantMessage, Chat, ChatMessage, EngineResult, FileAttachment, TimerState, UiPreferences } from '../types';
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
 import { configureEngine, pickResponse, withName } from '../engine/aikoEngine';
 import { isRuleCode, parseRuleCode, rulesWithIds } from '../engine/ruleParser';
-import { LS, clone, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
-import { readLocalJson, removeLocalValue, writeLocalJson } from './useLocalStorage';
+import { LEGACY_LS, LS, clone, defaultUi, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
+import { readVersionedLocalJson, removeVersionedLocalValue, writeVersionedLocalJson } from './useLocalStorage';
 import { useTimers } from './useTimers';
 
 const randomOf = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
+const LEGACY_STORAGE_KEYS = new Set<string>(Object.values(LEGACY_LS));
+const ATTACHMENT_UNSUPPORTED = 'Ich sehe, dass du Dateien angehängt hast, kann ihren Inhalt aber noch nicht auslesen oder verarbeiten. Füge den relevanten Text bitte direkt in den Chat ein.';
 
 function pickGreeting(config: AikoConfig): string {
   const greetings = config.greetings.filter((greeting) => String(greeting).trim());
@@ -27,10 +29,10 @@ function createChat(config: AikoConfig): Chat {
 }
 
 function loadInitial() {
-  const config = normalizeConfig(readLocalJson<unknown>(LS.cfg, null));
-  const legacyTheme = readLocalJson<unknown>(LS.theme, 'dark');
-  const ui = normalizeUi(readLocalJson<unknown>(LS.ui, {}), legacyTheme);
-  const rawChats = readLocalJson<unknown>(LS.chats, []);
+  const config = normalizeConfig(readVersionedLocalJson<unknown>('cfg', null));
+  const legacyTheme = readVersionedLocalJson<unknown>('theme', 'dark');
+  const ui = normalizeUi(readVersionedLocalJson<unknown>('ui', {}), legacyTheme);
+  const rawChats = readVersionedLocalJson<unknown>('chats', []);
   const chats = Array.isArray(rawChats)
     ? rawChats.map((chat) => normalizeChat(chat, config)).filter((chat): chat is Chat => Boolean(chat?.messages.length))
     : [];
@@ -62,6 +64,7 @@ export function useAiko({ toast }: UseAikoOptions) {
   const [thinking, setThinking] = useState(false);
   const [unreadChat, setUnreadChat] = useState(false);
   const storageWarningShown = useRef(false);
+  const syncedStorageKeys = useRef(new Set<string>());
 
   const reportStorageError = useCallback(() => {
     if (storageWarningShown.current) return;
@@ -69,8 +72,8 @@ export function useAiko({ toast }: UseAikoOptions) {
     toast('Speichern nicht möglich – bitte jetzt ein Backup erstellen');
   }, [toast]);
 
-  const persist = useCallback((key: string, value: unknown) => {
-    if (!writeLocalJson(key, value)) reportStorageError();
+  const persist = useCallback((key: keyof typeof LS, value: unknown) => {
+    if (!writeVersionedLocalJson(key, value)) reportStorageError();
   }, [reportStorageError]);
 
   const configRef = useRef(config);
@@ -104,6 +107,57 @@ export function useAiko({ toast }: UseAikoOptions) {
       return resolved;
     });
   }, []);
+
+  useEffect(() => {
+    const applyStorageEvent = (event: StorageEvent) => {
+      if (event.storageArea && event.storageArea !== window.localStorage) return;
+      if (event.key && event.newValue == null && LEGACY_STORAGE_KEYS.has(event.key)) return;
+      const skip = (...keys: string[]) => keys.forEach((key) => syncedStorageKeys.current.add(key));
+      const parse = (): unknown => event.newValue == null ? null : JSON.parse(event.newValue);
+      try {
+        if (event.key === null) {
+          const nextConfig = normalizeConfig(null);
+          skip(LS.cfg, LS.ui, LS.theme, LS.chats);
+          setConfig(nextConfig);
+          setUi(defaultUi());
+          chatsRef.current = [];
+          setChatsState([]);
+          const fresh = createChat(nextConfig);
+          currentRef.current = fresh;
+          setCurrentState(fresh);
+          return;
+        }
+        if (event.key === LS.cfg || event.key === LEGACY_LS.cfg) {
+          setConfig(normalizeConfig(parse()));
+          if (event.key === LS.cfg) skip(LS.cfg);
+        } else if (event.key === LS.ui || event.key === LEGACY_LS.ui) {
+          setUi(normalizeUi(parse(), uiRef.current.theme));
+          if (event.key === LS.ui) skip(LS.ui, LS.theme);
+        } else if (event.key === LS.theme || event.key === LEGACY_LS.theme) {
+          const theme = parse();
+          setUi((current) => ({ ...current, theme: theme === 'system' || theme === 'light' || theme === 'dark' ? theme : 'dark' }));
+          if (event.key === LS.theme) skip(LS.ui, LS.theme);
+        } else if (event.key === LS.chats || event.key === LEGACY_LS.chats) {
+          const rawChats = parse();
+          const nextChats = Array.isArray(rawChats)
+            ? rawChats.map((chat) => normalizeChat(chat, configRef.current)).filter((chat): chat is Chat => Boolean(chat?.messages.length))
+            : [];
+          chatsRef.current = nextChats;
+          setChatsState(nextChats);
+          const currentChat = nextChats.find((chat) => chat.id === currentRef.current.id);
+          if (currentChat) {
+            currentRef.current = currentChat;
+            setCurrentState(currentChat);
+          }
+          if (event.key === LS.chats) skip(LS.chats);
+        }
+      } catch {
+        toast('Daten aus einem anderen Tab konnten nicht gelesen werden');
+      }
+    };
+    window.addEventListener('storage', applyStorageEvent);
+    return () => window.removeEventListener('storage', applyStorageEvent);
+  }, [setConfig, setUi, toast]);
 
   const storeCurrent = useCallback((chat: Chat, markUnread = false) => {
     currentRef.current = chat;
@@ -149,14 +203,20 @@ export function useAiko({ toast }: UseAikoOptions) {
     configureEngine(config, setConfig, timers.adapter);
   }, [config, setConfig, timers.adapter]);
 
-  useEffect(() => { persist(LS.cfg, config); }, [config, persist]);
   useEffect(() => {
-    persist(LS.ui, ui);
-    persist(LS.theme, ui.theme);
+    if (syncedStorageKeys.current.delete(LS.cfg)) return;
+    persist('cfg', config);
+  }, [config, persist]);
+  useEffect(() => {
+    const syncUi = syncedStorageKeys.current.delete(LS.ui);
+    const syncTheme = syncedStorageKeys.current.delete(LS.theme);
+    if (!syncUi) persist('ui', ui);
+    if (!syncTheme) persist('theme', ui.theme);
   }, [persist, ui]);
   useEffect(() => {
-    if (!ui.saveHistory) { removeLocalValue(LS.chats); return; }
-    persist(LS.chats, chats.filter((chat) => !chat.temp).map((chat) => ({
+    if (syncedStorageKeys.current.delete(LS.chats)) return;
+    if (!ui.saveHistory) { removeVersionedLocalValue('chats'); return; }
+    persist('chats', chats.filter((chat) => !chat.temp).map((chat) => ({
       id: chat.id,
       title: chat.title,
       model: chat.model,
@@ -371,21 +431,31 @@ export function useAiko({ toast }: UseAikoOptions) {
     generation.timeout = window.setTimeout(begin, wait);
   }, [finishGeneration, setConfig, storeCurrent, timers.adapter, updateChat]);
 
-  const send = useCallback((text: string) => {
+  const send = useCallback((text: string, attachments: FileAttachment[] = []) => {
     if (generationRef.current) return;
     const prompt = String(text || '').trim();
-    if (!prompt) return;
+    if (!prompt && !attachments.length) return;
     let chat = currentRef.current;
     let title = chat.title;
     if (!chat.messages.length) {
-      let candidate = prompt.replace(/\s+/g, ' ').replace(/[?!.]+$/, '');
+      let candidate = prompt.replace(/\s+/g, ' ').replace(/[?!.]+$/, '') || attachments[0]?.name || 'Datei angehängt';
       candidate = candidate.charAt(0).toUpperCase() + candidate.slice(1);
       title = candidate.length > 38 ? `${candidate.slice(0, 38).trim()}…` : candidate;
     }
-    const user: ChatMessage = { role: 'user', content: prompt, ts: Date.now() };
+    const user: ChatMessage = {
+      role: 'user',
+      content: prompt,
+      ts: Date.now(),
+      ...(attachments.length ? { attachments: attachments.slice(0, 10) } : {}),
+    };
     chat = { ...chat, title, messages: [...chat.messages, user], ts: Date.now() };
     const firstSaved = !chat.temp && !chatsRef.current.some((entry) => entry.id === chat.id);
     storeCurrent(chat, firstSaved);
+
+    if (attachments.length) {
+      startResponse(chat, prompt || 'Bitte sieh dir die angehängten Dateien an.', null, ATTACHMENT_UNSUPPORTED);
+      return;
+    }
 
     // Rule code can be pasted directly into the chat as well as into Settings.
     // Keep this detection deliberately explicit so ordinary messages such as
@@ -435,15 +505,18 @@ export function useAiko({ toast }: UseAikoOptions) {
     if (user.role !== 'user') return;
     const truncated = chat.messages.length > index + 1 ? { ...chat, messages: chat.messages.slice(0, index + 1) } : chat;
     storeCurrent(truncated);
-    startResponse(truncated, user.content, index);
+    startResponse(truncated, user.content || (user.attachments?.length ? 'Bitte sieh dir die angehängten Dateien an.' : ''), index,
+      user.attachments?.length ? ATTACHMENT_UNSUPPORTED : undefined);
   }, [startResponse, storeCurrent]);
 
   const editUser = useCallback((index: number, text: string) => {
     if (generationRef.current) return;
+    const original = currentRef.current.messages[index];
+    const attachments = original?.role === 'user' ? original.attachments || [] : [];
     const chat = { ...currentRef.current, messages: currentRef.current.messages.slice(0, index) };
     storeCurrent(chat);
     currentRef.current = chat;
-    send(text);
+    send(text, attachments);
   }, [send, storeCurrent]);
 
   const setVariant = useCallback((index: number, variant: number) => {

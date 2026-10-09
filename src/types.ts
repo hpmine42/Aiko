@@ -108,10 +108,18 @@ export interface MessageMeta {
   widget?: MessageWidget | null;
 }
 
+export interface FileAttachment {
+  name: string;
+  size: number;
+  type: string;
+  lastModified: number;
+}
+
 export interface UserMessage {
   role: 'user';
   content: string;
   ts: number;
+  attachments?: FileAttachment[];
 }
 
 export interface AssistantMessage {
@@ -142,6 +150,7 @@ export interface UiPreferences {
   think: boolean;
   suggest: boolean;
   saveHistory: boolean;
+  speechRecognition: boolean;
   theme: ThemePreference;
   calm: boolean;
 }

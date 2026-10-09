@@ -25,7 +25,7 @@ Aiko ist **keine KI im Sinne eines Sprachmodells** – und das ist Absicht, kein
 
 **Was Aiko ausdrücklich nicht ist:** ein Sprachmodell, ein Chatbot mit Weltwissen, eine Suchmaschine. Aiko kennt keine aktuellen Nachrichten, löst keine freien Textaufgaben und erfindet nichts. Passt keine Regel und ist kein Werkzeug zuständig, sagt Aiko das ehrlich – statt sich etwas auszudenken.
 
-> **Die Oberfläche ist an mobile Chat-Apps angelehnt – der Inhalt nicht.** Die „Modelle“ `4`, `4 mini` und `4 Think` im Kopfbereich ändern nur, wie lange Aiko tippt bzw. „nachdenkt“. Die Antworten stammen immer aus derselben Regel-Engine. Auch Streaming-Optik, Denk-Pause und Vorschlags-Buttons sind Darstellung, keine Berechnung.
+> **Die Oberfläche ist an mobile Chat-Apps angelehnt – der Inhalt nicht.** Die Antwortmodi **Standard**, **Schnell** und **Denkpause** ändern nur Tippgeschwindigkeit und Antwortpausen. Jede Antwort stammt aus derselben Regel-Engine. Streaming-Optik, Denk-Pause und Vorschlags-Buttons sind Darstellung, keine Berechnung.
 
 ---
 
@@ -129,7 +129,7 @@ Vite gibt die lokale Adresse aus. Einstellungen, Regeln und Chats werden ausschl
 | `npm run build` | Typprüfung + statischer Build nach `dist/` |
 | `npm run preview` | gebauten Stand lokal ausliefern |
 
-`dist/` ist eine rein statische Seite und läuft auf jedem Webspace, hinter jedem Reverse-Proxy oder komplett lokal. Im Produktions-Build registriert Aiko zusätzlich einen Service Worker und kann als installierbare PWA genutzt werden. Nach dem ersten Laden bleibt die App auch beim nächsten Aufruf ohne Netz verfügbar.
+`dist/` ist eine rein statische Seite und läuft auf jedem Webspace, hinter jedem Reverse-Proxy oder komplett lokal. Im Produktions-Build registriert Aiko zusätzlich einen Service Worker und kann als installierbare PWA genutzt werden. Nach dem ersten Laden bleibt die App auch beim nächsten Aufruf ohne Netz verfügbar. Neue Dateien werden in einem eigenen, inhaltsbasiert versionierten Cache vorbereitet; ein laufender Chat wird nicht ungefragt ersetzt. Ist ein Update bereit, kann es über den Hinweis „Jetzt neu laden“ übernommen werden, andernfalls nach dem Schließen aller alten App-Fenster.
 
 ### GitHub Pages
 
@@ -153,18 +153,20 @@ src/
 └── styles.css    responsives Hell-/Dunkel-Design
 ```
 
-Die ursprüngliche Einzeldatei-App bleibt als [`ai21.html`](ai21.html) als Migrationsreferenz erhalten; ausgeliefert wird die React-App über die Wurzel `index.html`.
+Ausgeliefert wird die React-App über die Wurzel `index.html`; die frühere Einzeldatei-App ist nicht mehr Teil des Projekts.
 
 ---
 
 ## Datenschutz im Detail
 
-- **Keine Netzwerkanfragen im Code:** kein `fetch`, kein `XMLHttpRequest`, kein WebSocket, keine Analytics, keine CDNs, keine externen Fonts oder Bilder.
-- **Speicherung:** `nova.config.v1`, `nova.chats.v1`, `nova.timers.v1`, `nova.ui.v1`, `nova.theme.v1` im `localStorage` des Browsers.
-- **Systemfunktionen:** Vorlesen nutzt die Stimmen des Geräts (Web Speech API), Teilen die Teilen-Funktion des Systems, Timer eine optionale Vibration – alles über dein Betriebssystem, nicht über das Netz.
+- **Keine Chat-Anfragen an einen Server:** Antworten entstehen lokal. Der Service Worker lädt ausschließlich Dateien derselben Website für Updates und Offline-Nutzung; es gibt keine Analytics, CDNs oder externen Fonts/Bilder.
+- **Speicherung:** `nova.config.v2`, `nova.chats.v2`, `nova.timers.v2`, `nova.ui.v2`, `nova.theme.v2` im `localStorage` des Browsers. Alte `.v1`-Schlüssel werden beim Laden normalisiert migriert und erst nach erfolgreichem Speichern entfernt.
+- **Diktieren ist optional:** Die Browser-Spracherkennung ist zunächst deaktiviert. Beim Aktivieren weist Aiko darauf hin, dass der Browser je nach Anbieter Audio extern verarbeiten kann. Aiko selbst sendet keine Audiodaten.
+- **Dateianhänge:** Dateien werden mit Name/Größe im Chat angezeigt; Bilder erhalten eine lokale Vorschau im Browser. Aikos Antwort-Engine kann Dateiinhalte nicht lesen oder analysieren; Datei-Bytes werden weder hochgeladen noch in `localStorage` gespeichert. Beim Senden erklärt Aiko diese Grenze ausdrücklich.
+- **Systemfunktionen:** Vorlesen nutzt die Stimmen des Geräts (Web Speech API), Teilen die Teilen-Funktion des Systems, Timer eine optionale Vibration.
 - **Export nur auf Klick:** Backup (JSON) und Chat-Export (Markdown) entstehen ausschließlich, wenn du sie auslöst.
 - **Löschen:** Browserdaten für die Seite löschen entfernt alle Aiko-Daten, inklusive Chats.
-- **Hosting-Hinweis:** Die App ist eine statische Seite. Wer sie ausliefert, sieht beim Aufruf übliche Server-Logs (IP, Zeitpunkt, Datei). Chat-Inhalte sind nie Teil davon, weil sie den Browser nicht verlassen.
+- **Hosting-Hinweis:** Die App ist eine statische Seite. Wer sie ausliefert, sieht beim Aufruf übliche Server-Logs (IP, Zeitpunkt, Datei). Chat-Inhalte werden nicht an diesen Host gesendet.
 
 ---
 
@@ -205,7 +207,7 @@ Aiko is **not an AI in the sense of a language model** – that is intentional, 
 
 **What Aiko explicitly is not:** a language model, a chatbot with world knowledge, a search engine. Aiko has no current information, does not solve free-form word problems and never makes things up. If no rule and no tool matches, it says so instead of inventing an answer.
 
-> **The interface takes cues from mobile chat apps – the content does not.** The “models” `4`, `4 mini` and `4 Think` in the header only change how long Aiko types or “thinks”. The replies always come from the same rule engine, and streaming, thinking pauses and suggestion chips are presentation, not computation.
+> **The interface takes cues from mobile chat apps – the content does not.** The **Standard**, **Schnell** (“Fast”) and **Denkpause** (“Thinking pause”) modes only change typing speed and response delays. Every reply comes from the same rule engine; streaming, thinking pauses and suggestion chips are presentation, not computation.
 
 ## How a reply is produced
 
@@ -232,11 +234,11 @@ npm test
 npm run build    # static output in dist/
 ```
 
-Node.js 20.19+ (or 22.12+) and npm are required. `dist/` is a plain static site and can be hosted anywhere, including GitHub Pages – the workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) validates, builds and deploys every push to `main`.
+Node.js 20.19+ (or 22.12+) and npm are required. `dist/` is a plain static site and can be hosted anywhere, including GitHub Pages – the workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) validates, builds and deploys every push to `main`. Production builds generate a content-versioned service worker. Updates are staged without interrupting an open chat; users can reload from the update notice or let the update apply after closing old app windows.
 
 ## Privacy and limits
 
-No `fetch`, no `XMLHttpRequest`, no WebSocket, no analytics, no CDNs, no external fonts or images in the code. All state lives in the browser's `localStorage` (`nova.config.v1`, `nova.chats.v1`, `nova.timers.v1`, `nova.ui.v1`, `nova.theme.v1`). Speech output uses the device voices, sharing uses the system share sheet, timers may vibrate – all through your operating system, not the network. Files are only created when you export them; removing the site's browser data deletes everything, chats included. Any host serving the page sees ordinary server logs (IP, time, file) – chat content is never part of that because it never leaves the browser.
+Chat requests are never sent to a server; replies are generated locally. The service worker only fetches same-site app assets for updates and offline use. There is no analytics, CDN, external font or image. App data stays in the browser's `localStorage` (`nova.config.v2`, `nova.chats.v2`, `nova.timers.v2`, `nova.ui.v2`, `nova.theme.v2`). Legacy `.v1` keys are normalized into version 2 and removed only after the new value is saved successfully. Optional dictation starts disabled; browser speech recognition may process audio through an external provider, depending on the browser. Aiko itself never sends audio. File attachments are shown with their name and size; images get a browser-local preview. Aiko's reply engine cannot read or analyze file contents; file bytes are neither uploaded nor saved in `localStorage`. When an attachment is sent, Aiko states this limitation clearly. Speech output uses device voices, sharing uses the system share sheet, and timers may vibrate. Files are only created when you export them; removing the site's browser data deletes app data, chats included. The hosting site receives ordinary asset-request logs, but chat content is not sent to it.
 
 Aiko knows only what rules and tools cover: no general knowledge, no free-form word problems, no live data. Date and time come from the device, currency rates are fixed and can become outdated, and numeric results use JavaScript floating point (rounded to up to 12 significant digits). Without a backup, chats and rules are gone once the browser data is cleared.
 
@@ -244,7 +246,7 @@ Aiko knows only what rules and tools cover: no general knowledge, no free-form w
 
 `components/` React UI · `data/` default config, commands, verbatim rule prompt · `engine/` response engine, NovaMath, rule parser, QR encoder · `hooks/` chats, timers, localStorage, dialogs, toasts · `utils/` export, share, clipboard, image resize · `test/` engine and UI checks · `types.ts` shared types · `styles.css` responsive theme.
 
-The original single-file app is kept as [`ai21.html`](ai21.html) for migration reference.
+The former single-file app has been removed; the React app is served from the repository-root `index.html`.
 
 ## Lizenz / License
 
