@@ -1,7 +1,8 @@
-import { useRef, useState, type MouseEvent } from 'react';
+import { memo, useRef, useState, type MouseEvent } from 'react';
 import type { AikoConfig, AssistantMessage, ChatMessage } from '../types';
 import { md, plain, withName } from '../engine/aikoEngine';
 import { copyText, plainCopy, shareText } from '../utils/browser';
+import { formatFileSize } from '../utils/files';
 import { Icon } from './Icon';
 import { MessageWidget } from './MessageWidget';
 import { Popover } from './Popover';
@@ -22,10 +23,10 @@ interface MessageProps {
   toast: (message: string) => void;
 }
 
-export function Message({ message, ...props }: MessageProps) {
+export const Message = memo(function Message({ message, ...props }: MessageProps) {
   if (message.role === 'user') return <UserMessage message={message} {...props} />;
   return <AssistantMessageView message={message} {...props} />;
-}
+});
 
 type SharedProps = Omit<MessageProps, 'message'>;
 
@@ -47,7 +48,7 @@ function UserMessage({ message, index, onEdit, toast, generating }: { message: E
             <button type="button" className="eb2" onClick={() => { setValue(message.content); setEditing(false); }}>Abbrechen</button>
             <button type="button" className="eb1" onClick={() => {
               const next = value.trim();
-              if (!next) return;
+              if (!next && !message.attachments?.length) return;
               setEditing(false);
               onEdit(index, next);
             }}>Senden</button>
@@ -58,13 +59,25 @@ function UserMessage({ message, index, onEdit, toast, generating }: { message: E
   }
   return (
     <div className="msg user" data-i={index}>
-      <div className="ubub">{message.content}</div>
+      {message.content && <div className="ubub">{message.content}</div>}
+      {message.attachments && message.attachments.length > 0 && (
+        <div className="uattachments" aria-label="Angehängte Dateien">
+          {message.attachments.map((attachment, attachmentIndex) => (
+            <div className="uattachment" key={`${attachment.name}-${attachment.lastModified}-${attachmentIndex}`}>
+              <Icon name="file" />
+              <span className="uattachment-name">{attachment.name}<small className="uattachment-size">{formatFileSize(attachment.size)}</small></span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="uacts">
-        <button type="button" className="ab" aria-label="Kopieren" onClick={() => { void copyText(message.content); toast('Kopiert'); }}><Icon name="copy" /></button>
+        <button type="button" className="ab" aria-label="Kopieren" onClick={async () => { toast(await copyText(message.content) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); }}><Icon name="copy" /></button>
         <button type="button" className="ab ux" aria-label="Teilen" onClick={async () => {
           const result = await shareText(message.content);
-          if (result === 'copied') toast('Text kopiert');
+          if (result === 'shared') toast('Nachricht geteilt');
+          else if (result === 'copied') toast('Text kopiert');
           else if (result === 'cancelled') toast('Teilen abgebrochen');
+          else toast('Teilen und Kopieren fehlgeschlagen');
         }}><Icon name="share" /></button>
         <button type="button" className="ab ux" aria-label="Nachricht bearbeiten" disabled={generating} onClick={() => setEditing(true)}><Icon name="edit" /></button>
       </div>
@@ -103,11 +116,14 @@ function AssistantMessageView({
     const button = target.closest<HTMLButtonElement>('.cbcopy');
     if (!button) return;
     const code = button.closest('.cb')?.querySelector('code')?.textContent || '';
-    void copyText(code);
-    button.innerHTML = `${iconMarkup('check')}<span>Kopiert</span>`;
-    window.setTimeout(() => {
-      if (button.isConnected) button.innerHTML = `${iconMarkup('copy')}<span>Kopieren</span>`;
-    }, 1_600);
+    void copyText(code).then((copied) => {
+      button.innerHTML = copied
+        ? `${iconMarkup('check')}<span>Kopiert</span>`
+        : `${iconMarkup('copy')}<span>Fehlgeschlagen</span>`;
+      window.setTimeout(() => {
+        if (button.isConnected) button.innerHTML = `${iconMarkup('copy')}<span>Kopieren</span>`;
+      }, 1_600);
+    });
   };
 
   const speak = () => {
@@ -153,7 +169,7 @@ function AssistantMessageView({
               <button type="button" aria-label="Nächste Antwort" disabled={message.vi === message.variants.length - 1} onClick={() => onVariant(index, message.vi + 1)}><Icon name="chevR" /></button>
             </div>
           )}
-          <button type="button" className="ab" aria-label="Kopieren" onClick={() => { void copyText(plainCopy(rendered)); toast('Kopiert'); }}><Icon name="copy" /></button>
+          <button type="button" className="ab" aria-label="Kopieren" onClick={async () => { toast(await copyText(plainCopy(rendered)) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); }}><Icon name="copy" /></button>
           <button
             ref={feedbackRef}
             type="button"
@@ -165,8 +181,10 @@ function AssistantMessageView({
           </button>
           <button type="button" className="ab" aria-label="Teilen" onClick={async () => {
             const result = await shareText(plainCopy(rendered));
-            if (result === 'copied') toast('Text kopiert');
+            if (result === 'shared') toast('Antwort geteilt');
+            else if (result === 'copied') toast('Text kopiert');
             else if (result === 'cancelled') toast('Teilen abgebrochen');
+            else toast('Teilen und Kopieren fehlgeschlagen');
           }}><Icon name="share" /></button>
           <button type="button" className="ab" aria-label="Neu generieren" onClick={() => onRegenerate(index)}><Icon name="regen" /></button>
           <button ref={moreRef} type="button" className="ab" aria-label="Weitere Aktionen" onClick={() => setMoreOpen((value) => !value)}><Icon name="dots" /></button>
@@ -196,11 +214,11 @@ function AssistantMessageView({
         <button type="button" className="pi" onClick={() => { speak(); setMoreOpen(false); }}>
           <Icon name={speaking ? 'stop' : 'speaker'} /><span className="tx">{speaking ? 'Vorlesen stoppen' : 'Vorlesen'}</span>
         </button>
-        <button type="button" className="pi" onClick={() => { void copyText(plainCopy(rendered)); toast('Kopiert'); setMoreOpen(false); }}>
+        <button type="button" className="pi" onClick={async () => { toast(await copyText(plainCopy(rendered)) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); setMoreOpen(false); }}>
           <Icon name="copy" /><span className="tx">Als Text kopieren</span>
         </button>
         <button type="button" className="pi" onClick={() => { onRegenerate(index); setMoreOpen(false); }}>
-          <Icon name="regen" /><span className="tx">Modell: {config.assistantName} {config.models.find((model) => model.id === modelId)?.label || '4'}</span>
+          <Icon name="regen" /><span className="tx">Mit {config.models.find((model) => model.id === modelId)?.label || 'Standard'}-Modus neu generieren</span>
         </button>
       </Popover>
     </div>

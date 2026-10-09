@@ -1,4 +1,5 @@
 import type { FollowUpKind, Rule, RuleCodeResult } from '../types';
+import { isSafeRuleRegex } from '../utils/safeRegex';
 
 /**
  * Detects the explicit rule-code format without treating ordinary chat text
@@ -73,7 +74,9 @@ export function parseRuleCode(text: string): RuleCodeResult {
     if (['regel', 'muster', 'stichwort', 'stichwoerter', 'pattern', 'patterns'].includes(key)) {
       const parts = splitPipes(value);
       if (!parts.length) errors.push(`Zeile ${lineNumber}: „regel:“ braucht mindestens ein Stichwort`);
-      rule.patterns = rule.patterns.concat(parts);
+      const unsafeRegex = parts.find((part) => part.startsWith('~') && !isSafeRuleRegex(part));
+      if (unsafeRegex) errors.push(`Zeile ${lineNumber}: RegEx ist ungültig oder zu komplex; zu lange RegEx, zu viele oder verschachtelte Wiederholungen und Backreferences sind nicht erlaubt`);
+      else rule.patterns = rule.patterns.concat(parts);
     } else if (['antwort', 'antworten', 'response', 'antworttext'].includes(key)) {
       if (!value) errors.push(`Zeile ${lineNumber}: „antwort:“ ist leer`);
       else rule.response = rule.response ? `${rule.response}|||${value}` : value;

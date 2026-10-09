@@ -1,13 +1,24 @@
 import { DEFAULT_CONFIG } from '../data/defaultConfig';
-import type { AikoConfig, Chat, ChatMessage, MessageMeta, MessageWidget, Rule, UiPreferences } from '../types';
+import type { AikoConfig, Chat, ChatMessage, FileAttachment, MessageMeta, MessageWidget, Rule, UiPreferences } from '../types';
 
+export const STORAGE_FORMAT_VERSION = 2;
 export const LS = {
+  cfg: 'nova.config.v2',
+  chats: 'nova.chats.v2',
+  theme: 'nova.theme.v2',
+  ui: 'nova.ui.v2',
+  timers: 'nova.timers.v2',
+} as const;
+export const LEGACY_LS = {
   cfg: 'nova.config.v1',
   chats: 'nova.chats.v1',
   theme: 'nova.theme.v1',
   ui: 'nova.ui.v1',
   timers: 'nova.timers.v1',
 } as const;
+
+export const BACKUP_FORMAT_VERSION = 3;
+export const MAX_BACKUP_SIZE_BYTES = 20 * 1024 * 1024;
 
 export const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -38,11 +49,15 @@ export function normalizeConfig(input: unknown): AikoConfig {
   merged.userName = String(merged.userName == null ? '' : merged.userName).trim();
   if (merged.userName === 'Du') merged.userName = '';
   if (!Array.isArray(merged.greetings) || !merged.greetings.length) merged.greetings = clone(DEFAULT_CONFIG.greetings);
-  merged.models = merged.models.map((model) => ({
-    id: String(model.id || ''),
-    label: String(model.label || model.id || '').replace(/^nova\s+/i, ''),
-    desc: String(model.desc || ''),
-  }));
+  merged.models = merged.models.map((model) => {
+    const id = String(model.id || '');
+    const builtin = DEFAULT_CONFIG.models.find((entry) => entry.id === id);
+    return {
+      id,
+      label: builtin?.label || String(model.label || id).replace(/^nova\s+/i, ''),
+      desc: builtin?.desc || String(model.desc || ''),
+    };
+  });
   if (!merged.models.some((model) => model.id === merged.defaultModel)) {
     merged.defaultModel = merged.models[0].id;
   }
@@ -145,7 +160,28 @@ export function normalizeChat(input: unknown, config: AikoConfig): Chat | null {
     .filter((message): message is ChatMessage => Boolean(message && (message.role === 'user' || message.role === 'assistant')))
     .map((message): ChatMessage => {
       if (message.role === 'user') {
-        return { role: 'user', content: String(message.content || ''), ts: message.ts || Date.now() };
+        const rawAttachments = (message as unknown as { attachments?: unknown }).attachments;
+        const attachments = Array.isArray(rawAttachments)
+          ? rawAttachments.slice(0, 10).flatMap((entry): FileAttachment[] => {
+            if (!entry || typeof entry !== 'object') return [];
+            const attachment = entry as Record<string, unknown>;
+            const name = String(attachment.name || '').trim().slice(0, 255);
+            const size = Number(attachment.size);
+            if (!name || !Number.isFinite(size) || size < 0) return [];
+            return [{
+              name,
+              size,
+              type: String(attachment.type || '').slice(0, 128),
+              lastModified: Math.max(0, Number(attachment.lastModified) || 0),
+            }];
+          })
+          : [];
+        return {
+          role: 'user',
+          content: String(message.content || ''),
+          ts: message.ts || Date.now(),
+          ...(attachments.length ? { attachments } : {}),
+        };
       }
       const legacy = message as typeof message & { content?: string };
       const variants = Array.isArray(message.variants) ? message.variants.map(String) : [String(legacy.content || '')];
@@ -179,6 +215,7 @@ export const defaultUi = (theme: unknown = 'dark'): UiPreferences => ({
   think: true,
   suggest: true,
   saveHistory: true,
+  speechRecognition: false,
   theme: theme === 'system' || theme === 'light' || theme === 'dark' ? theme : 'dark',
   calm: false,
 });
@@ -186,7 +223,56 @@ export const defaultUi = (theme: unknown = 'dark'): UiPreferences => ({
 export function normalizeUi(input: unknown, legacyTheme?: unknown): UiPreferences {
   const defaults = defaultUi(legacyTheme);
   if (!input || typeof input !== 'object') return defaults;
-  const value = { ...defaults, ...(input as Partial<UiPreferences>) };
+  const raw = input as Partial<UiPreferences>;
+  const value = { ...defaults, ...raw };
   if (!['system', 'light', 'dark'].includes(value.theme)) value.theme = 'dark';
+  value.stream = typeof raw.stream === 'boolean' ? raw.stream : defaults.stream;
+  value.think = typeof raw.think === 'boolean' ? raw.think : defaults.think;
+  value.suggest = typeof raw.suggest === 'boolean' ? raw.suggest : defaults.suggest;
+  value.saveHistory = typeof raw.saveHistory === 'boolean' ? raw.saveHistory : defaults.saveHistory;
+  value.speechRecognition = raw.speechRecognition === true;
+  value.calm = typeof raw.calm === 'boolean' ? raw.calm : defaults.calm;
   return value;
+}
+
+export interface NormalizedBackup {
+  version: number;
+  config: AikoConfig;
+  ui: UiPreferences | null;
+  chats: Chat[] | null;
+}
+
+/** Normalize supported backup versions and reject unknown future formats. */
+export function normalizeBackup(input: unknown): NormalizedBackup {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Ungültiges Backup-Format');
+  const raw = input as Record<string, unknown>;
+  if (raw.app != null && !['aiko', 'nova'].includes(String(raw.app).toLowerCase())) {
+    throw new Error('Diese Datei stammt nicht aus Aiko');
+  }
+  if (!raw.config || typeof raw.config !== 'object' || Array.isArray(raw.config)) {
+    throw new Error('Im Backup fehlt eine gültige Konfiguration');
+  }
+  const version = raw.version == null ? 1 : Number(raw.version);
+  if (!Number.isInteger(version) || version < 1) throw new Error('Ungültige Backup-Version');
+  if (version > BACKUP_FORMAT_VERSION) {
+    throw new Error(`Dieses Backup stammt aus einer neueren Aiko-Version (Format ${version}). Aktualisiere Aiko zum Wiederherstellen.`);
+  }
+
+  // Versions 1 and 2 are upgraded through the same tolerant field normalizers;
+  // version 3 adds explicit attachment metadata and stricter UI preferences.
+  const config = normalizeConfig(raw.config);
+  if (raw.ui != null && (typeof raw.ui !== 'object' || Array.isArray(raw.ui))) {
+    throw new Error('Die Einstellungen im Backup sind ungültig');
+  }
+  const ui = raw.ui == null
+    ? null
+    : { ...normalizeUi(raw.ui), speechRecognition: false };
+  let chats: Chat[] | null = null;
+  if (raw.chats != null) {
+    if (!Array.isArray(raw.chats)) throw new Error('Die Chatliste im Backup ist ungültig');
+    chats = raw.chats
+      .map((chat) => normalizeChat(chat, config))
+      .filter((chat): chat is Chat => Boolean(chat?.messages.length) && !chat?.temp);
+  }
+  return { version, config, ui, chats };
 }

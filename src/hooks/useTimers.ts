@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TimerAdapter, TimerState } from '../types';
-import { LS } from '../utils/config';
-import { readLocalJson, writeLocalJson } from './useLocalStorage';
+import { LEGACY_LS, LS } from '../utils/config';
+import { readVersionedLocalJson, writeVersionedLocalJson } from './useLocalStorage';
 
 export function durationWords(seconds: number): string {
   const format = (value: number) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(value);
@@ -14,8 +14,7 @@ export function timerRemaining(timer: TimerState, now = Date.now()): number {
   return Math.max(0, timer.paused ? Number(timer.left) || 0 : timer.end - now);
 }
 
-function loadTimers(): TimerState[] {
-  const stored = readLocalJson<unknown>(LS.timers, []);
+function normalizeTimers(stored: unknown): TimerState[] {
   if (!Array.isArray(stored)) return [];
   return stored
     .filter((entry): entry is TimerState => Boolean(entry && typeof entry === 'object' && Number(entry.end)))
@@ -28,6 +27,10 @@ function loadTimers(): TimerState[] {
       paused: Boolean(entry.paused),
       left: entry.paused ? Math.max(0, Number(entry.left) || Number(entry.end) - Date.now()) : undefined,
     }));
+}
+
+function loadTimers(): TimerState[] {
+  return normalizeTimers(readVersionedLocalJson<unknown>('timers', []));
 }
 
 function beep(): void {
@@ -67,6 +70,7 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
   const onFireRef = useRef(onFire);
   const onStorageErrorRef = useRef(onStorageError);
   const currentChatRef = useRef(currentChatId);
+  const skipTimerWrite = useRef(false);
   timersRef.current = timers;
   onFireRef.current = onFire;
   onStorageErrorRef.current = onStorageError;
@@ -81,7 +85,30 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
   }, []);
 
   useEffect(() => {
-    const saved = writeLocalJson(LS.timers, timers.map(({ id, end, dur, label, chat, paused, left }) => ({
+    const syncTimers = (event: StorageEvent) => {
+      if (event.storageArea && event.storageArea !== window.localStorage) return;
+      if (event.key === LEGACY_LS.timers && event.newValue == null) return;
+      if (event.key !== LS.timers && event.key !== LEGACY_LS.timers && event.key !== null) return;
+      try {
+        const stored = event.key === null || event.newValue == null ? [] : JSON.parse(event.newValue) as unknown;
+        const next = normalizeTimers(stored);
+        skipTimerWrite.current = event.key !== LEGACY_LS.timers;
+        timersRef.current = next;
+        setTimers(next);
+      } catch {
+        onStorageErrorRef.current?.();
+      }
+    };
+    window.addEventListener('storage', syncTimers);
+    return () => window.removeEventListener('storage', syncTimers);
+  }, []);
+
+  useEffect(() => {
+    if (skipTimerWrite.current) {
+      skipTimerWrite.current = false;
+      return;
+    }
+    const saved = writeVersionedLocalJson('timers', timers.map(({ id, end, dur, label, chat, paused, left }) => ({
       id, end, dur, label, chat, paused, left: paused ? left : undefined,
     })));
     if (!saved) onStorageErrorRef.current?.();
@@ -105,9 +132,11 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
     // Background tabs throttle intervals. Checking immediately after the tab
     // becomes visible makes a persisted timer reliable without any backend.
     document.addEventListener('visibilitychange', checkExpired);
+    window.addEventListener('focus', checkExpired);
     return () => {
       window.clearInterval(tick);
       document.removeEventListener('visibilitychange', checkExpired);
+      window.removeEventListener('focus', checkExpired);
     };
   }, [checkExpired]);
 

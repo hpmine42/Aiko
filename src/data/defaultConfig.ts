@@ -2,7 +2,7 @@ import type { AikoConfig } from '../types';
 
 export const DEFAULT_CONFIG: AikoConfig = {
   "assistantName": "Aiko",
-  "userName": "Jakob",
+  "userName": "",
   "greetings": [
     "Hallo, {name}. Bist du bereit?",
     "Was steht heute an, {name}?",
@@ -13,18 +13,18 @@ export const DEFAULT_CONFIG: AikoConfig = {
   "models": [
     {
       "id": "nova4",
-      "label": "4",
-      "desc": "Ideal für alltägliche Aufgaben"
+      "label": "Standard",
+      "desc": "Normales Antworttempo"
     },
     {
       "id": "nova4mini",
-      "label": "4 mini",
-      "desc": "Schneller bei einfachen Fragen"
+      "label": "Schnell",
+      "desc": "Kürzere Tipp-Pausen"
     },
     {
       "id": "nova4think",
-      "label": "4 Think",
-      "desc": "Denkt vor dem Antworten länger nach"
+      "label": "Denkpause",
+      "desc": "Längere Pause vor der Antwort"
     }
   ],
   "defaultModel": "nova4",

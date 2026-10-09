@@ -3,6 +3,8 @@ import type { AikoConfig, FollowUpKind, Rule } from '../types';
 import { configureEngine, md, pickResponse, plain, ruleTitle, variantsOf, withName } from '../engine/aikoEngine';
 import { Icon } from './Icon';
 import { InfoBox } from './InfoBox';
+import { useModalFocus } from '../hooks/useModalFocus';
+import { isSafeRuleRegex } from '../utils/safeRegex';
 
 const FOLLOW_UPS: Array<[FollowUpKind, string, string]> = [
   ['kuerzer', 'Kürzer', '„kürzer“, „kurz gesagt“, „tl;dr“'],
@@ -21,12 +23,22 @@ interface RuleEditorProps {
   onClose: () => void;
   onDelete: (rule: Rule) => Promise<boolean>;
   toast: (message: string) => void;
+  modalOpen?: boolean;
 }
 
-export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, toast }: RuleEditorProps) {
+export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, toast, modalOpen = false }: RuleEditorProps) {
   const [test, setTest] = useState('');
-  if (index == null || !config.pairs[index]) return <section className="page z2" id="rulePage" />;
-  const rule = config.pairs[index];
+  const rule = index == null ? undefined : config.pairs[index];
+  const close = () => {
+    if (rule) {
+      const touched = rule.patterns.length || rule.response.trim() || rule.priority || (rule.exclude || []).length
+        || (rule.suggest || []).length || Object.keys(rule.followups || {}).length;
+      if (isNew && !touched) onConfig({ ...config, pairs: config.pairs.filter((entry) => entry.id !== rule.id) });
+    }
+    onClose();
+  };
+  const dialogRef = useModalFocus<HTMLElement>(Boolean(rule), { onEscape: close });
+  if (index == null || !rule) return <section className="page z2" id="rulePage" />;
 
   const update = (patch: Partial<Rule>) => {
     const pairs = config.pairs.map((entry, entryIndex) => entryIndex === index ? { ...entry, ...patch } : entry);
@@ -35,14 +47,8 @@ export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, 
     configureEngine(next);
   };
 
-  const close = () => {
-    const touched = rule.patterns.length || rule.response.trim() || rule.priority || (rule.exclude || []).length
-      || (rule.suggest || []).length || Object.keys(rule.followups || {}).length;
-    if (isNew && !touched) onConfig({ ...config, pairs: config.pairs.filter((_, entryIndex) => entryIndex !== index) });
-    onClose();
-  };
-
   const variants = variantsOf(rule.response);
+  const hasUnsafeRegex = rule.patterns.some((pattern) => pattern.startsWith('~') && !isSafeRuleRegex(pattern));
   const result = useMemo(() => {
     if (!test.trim()) return null;
     configureEngine(config);
@@ -58,7 +64,7 @@ export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, 
   }
 
   return (
-    <section className="page z2 open" id="rulePage" role="dialog" aria-modal="true" aria-labelledby="rule-title">
+    <section ref={dialogRef} className="page z2 open" id="rulePage" role="dialog" aria-modal="true" aria-labelledby="rule-title" tabIndex={-1} aria-hidden={modalOpen} inert={modalOpen ? true : undefined}>
       <div className="ph">
         <button type="button" className="ib" aria-label="Zurück" onClick={close}><Icon name="chevL" /></button>
         <h2 id="rule-title">{isNew ? 'Neue Regel' : 'Regel bearbeiten'}</h2>
@@ -82,6 +88,7 @@ export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, 
           />
         </div>
         <div className="help"><code>hallo</code> Nachricht enthält das Wort · <code>=hallo</code> Nachricht ist genau so · <code>~^hi\b</code> regulärer Ausdruck</div>
+        {hasUnsafeRegex && <div className="help err" role="alert">Eine RegEx ist ungültig oder zu komplex und wird aus Sicherheitsgründen nicht ausgeführt. Zu lange RegEx, zu viele oder verschachtelte Wiederholungen und Backreferences sind nicht erlaubt.</div>}
         <div className="field">
           <label htmlFor="rResp">Antwort</label>
           <textarea

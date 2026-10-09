@@ -1,8 +1,9 @@
 import type { Chat } from '../types';
 import { plain, withName } from '../engine/aikoEngine';
+import { formatFileSize } from './files';
 
-export async function copyText(text: string): Promise<void> {
-  const fallback = (): void => {
+export async function copyText(text: string): Promise<boolean> {
+  const fallback = (): boolean => {
     const active = document.activeElement as HTMLElement | null;
     const textarea = document.createElement('textarea');
     textarea.value = text;
@@ -10,15 +11,20 @@ export async function copyText(text: string): Promise<void> {
     textarea.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
     document.body.appendChild(textarea);
     textarea.select();
-    try { document.execCommand('copy'); } catch { /* no clipboard available */ }
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch { /* no clipboard available */ }
     textarea.remove();
     try { active?.focus(); } catch { /* detached element */ }
+    return copied;
   };
   try {
-    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
-    else fallback();
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return fallback();
   } catch {
-    fallback();
+    return fallback();
   }
 }
 
@@ -60,28 +66,31 @@ export function exportChatMarkdown(chat: Chat, assistantName: string): void {
     '',
   ];
   chat.messages.forEach((message) => {
-    if (message.role === 'user') lines.push(`**Du:** ${message.content.replace(/\n/g, '\n\n')}`, '');
-    else lines.push(`**${name}:** ${plain(withName(message.variants[message.vi] || ''))}`, '');
+    if (message.role === 'user') {
+      if (message.content) lines.push(`**Du:** ${message.content.replace(/\n/g, '\n\n')}`);
+      if (message.attachments?.length) {
+        lines.push('**Angehängte Dateien:**', ...message.attachments.map((file) => `- ${file.name} (${formatFileSize(file.size)})`));
+      }
+      lines.push('');
+    } else lines.push(`**${name}:** ${plain(withName(message.variants[message.vi] || ''))}`, '');
   });
   const filename = (chat.title || name || 'Aiko').replace(/[\\/:*?"<>|]/g, '-').slice(0, 40) || 'Aiko';
   downloadBlob(lines.join('\n'), 'text/markdown;charset=utf-8', `${filename}.md`);
 }
 
-export type ShareResult = 'shared' | 'copied' | 'cancelled';
+export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'failed';
 
 export async function shareText(text: string): Promise<ShareResult> {
   if (navigator.share) {
     try {
       await navigator.share({ text });
       return 'shared';
-    } catch {
-      // A cancelled native share is not an error and must not claim that the
-      // text was copied. The caller can give the user an honest status.
-      return 'cancelled';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+      return await copyText(text) ? 'copied' : 'failed';
     }
   }
-  await copyText(text);
-  return 'copied';
+  return await copyText(text) ? 'copied' : 'failed';
 }
 
 export function resizeAvatar(file: File, size = 128): Promise<string> {

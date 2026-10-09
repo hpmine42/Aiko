@@ -27,7 +27,7 @@ export function MessageWidget({ widget, config, onConfig, toast }: MessageWidget
         <div className="wpw-h">{widget.label || 'Passwort'}</div>
         <code className="wpw-v">{widget.text}</code>
         <div className="wqr-b">
-          <button type="button" className="pw-copy" onClick={() => { void copyText(widget.text); toast('Kopiert'); }}>Kopieren</button>
+          <button type="button" className="pw-copy" onClick={async () => { toast(await copyText(widget.text) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); }}>Kopieren</button>
         </div>
       </div>
     );

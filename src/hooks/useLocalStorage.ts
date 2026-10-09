@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LEGACY_LS, LS } from '../utils/config';
 
 export function readLocalJson<T>(key: string, fallback: T): T {
   try {
@@ -25,6 +26,24 @@ export function removeLocalValue(key: string): void {
   } catch {
     // Ignore unavailable localStorage.
   }
+}
+
+export type StoredDataKey = keyof typeof LS;
+
+export function readVersionedLocalJson<T>(key: StoredDataKey, fallback: T): T {
+  const current = readLocalJson<unknown>(LS[key], null);
+  return (current == null ? readLocalJson<unknown>(LEGACY_LS[key], fallback) : current) as T;
+}
+
+export function writeVersionedLocalJson(key: StoredDataKey, value: unknown): boolean {
+  const saved = writeLocalJson(LS[key], value);
+  if (saved) removeLocalValue(LEGACY_LS[key]);
+  return saved;
+}
+
+export function removeVersionedLocalValue(key: StoredDataKey): void {
+  removeLocalValue(LS[key]);
+  removeLocalValue(LEGACY_LS[key]);
 }
 
 export function useLocalStorageState<T>(

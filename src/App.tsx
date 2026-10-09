@@ -14,6 +14,7 @@ import { useDialog } from './hooks/useDialog';
 import { useToast } from './hooks/useToast';
 import { copyText, exportChatMarkdown, plainCopy, shareText } from './utils/browser';
 import { withName } from './engine/aikoEngine';
+import { MAX_ATTACHMENTS, toFileAttachment } from './utils/files';
 
 export default function App() {
   const toastState = useToast();
@@ -23,18 +24,76 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsRulesOpen, setSettingsRulesOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showToBottom, setShowToBottom] = useState(false);
   const messageList = useRef<MessageListHandle>(null);
+  const reloadAfterServiceWorkerUpdate = useRef(false);
 
   const openSettings = useCallback((rules = false) => {
     setSettingsRulesOpen(rules);
     setSettingsOpen(true);
   }, []);
 
+  useEffect(() => {
+    if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return undefined;
+    let active = true;
+    let announcedWorker: ServiceWorker | null = null;
+    const announceUpdate = (worker: ServiceWorker) => {
+      if (announcedWorker === worker) return;
+      announcedWorker = worker;
+      toastState.show('Aiko-Update ist bereit', 'Jetzt neu laden', () => {
+        reloadAfterServiceWorkerUpdate.current = true;
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      });
+    };
+    const onControllerChange = () => {
+      if (!reloadAfterServiceWorkerUpdate.current) return;
+      reloadAfterServiceWorkerUpdate.current = false;
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then((registration) => {
+      if (!active) return;
+      if (registration.waiting && navigator.serviceWorker.controller) announceUpdate(registration.waiting);
+      registration.addEventListener('updatefound', () => {
+        const installing = registration.installing;
+        installing?.addEventListener('statechange', () => {
+          if (active && installing.state === 'installed' && navigator.serviceWorker.controller) announceUpdate(installing);
+        });
+      });
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+    };
+  }, [toastState.show]);
+
   const transcript = useCallback(() => aiko.current.messages.map((message) => {
-    if (message.role === 'user') return `Du: ${message.content}`;
+    if (message.role === 'user') {
+      const files = message.attachments?.map((file) => `\n[Datei: ${file.name}]`).join('') || '';
+      return `Du: ${message.content}${files}`;
+    }
     return `${aiko.config.assistantName}: ${plainCopy(withName(message.variants[message.vi] || ''))}`;
   }).join('\n\n'), [aiko.config.assistantName, aiko.current.messages]);
+
+  const addFiles = useCallback((files: File[]) => {
+    const available = Math.max(0, MAX_ATTACHMENTS - pendingFiles.length);
+    const accepted = files.slice(0, available);
+    if (accepted.length) setPendingFiles((current) => [...current, ...accepted]);
+    if (accepted.length < files.length) toastState.show(`Maximal ${MAX_ATTACHMENTS} Dateien pro Nachricht`);
+  }, [pendingFiles.length, toastState.show]);
+
+  const requestSpeechConsent = useCallback(async () => {
+    const accepted = await dialog.confirm({
+      title: 'Diktieren aktivieren?',
+      text: 'Die Browser-Spracherkennung wandelt deine Stimme in Text um. Je nach Browser kann die Audioverarbeitung durch einen externen Sprachdienst erfolgen. Aiko selbst sendet keine Audiodaten. Wenn du zustimmst, tippe danach erneut auf das Mikrofon.',
+      ok: 'Erlauben',
+    });
+    if (accepted) {
+      aiko.setUi({ ...aiko.ui, speechRecognition: true });
+      toastState.show('Diktieren aktiviert. Tippe erneut auf das Mikrofon.');
+    }
+  }, [aiko.setUi, aiko.ui, dialog.confirm, toastState.show]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -46,8 +105,9 @@ export default function App() {
         event.preventDefault();
         const last = [...aiko.current.messages].reverse().find((message) => message.role === 'assistant');
         if (last?.role === 'assistant') {
-          void copyText(plainCopy(withName(last.variants[last.vi] || '')));
-          toastState.show('Letzte Antwort kopiert');
+          void copyText(plainCopy(withName(last.variants[last.vi] || ''))).then((copied) => {
+            toastState.show(copied ? 'Letzte Antwort kopiert' : 'Kopieren fehlgeschlagen');
+          });
         }
       } else if (event.key === 'Escape') {
         if (settingsOpen || attachmentOpen) return;
@@ -100,7 +160,7 @@ export default function App() {
 
   return (
     <>
-      <Chat>
+      <Chat inert={sidebarOpen || settingsOpen || attachmentOpen || Boolean(dialog.options)}>
         <Header
           config={aiko.config}
           chat={aiko.current}
@@ -111,8 +171,10 @@ export default function App() {
           onNewChat={aiko.newChat}
           onShare={async () => {
             const result = await shareText(transcript());
-            if (result === 'copied') toastState.show('Text kopiert');
+            if (result === 'shared') toastState.show('Chat geteilt');
+            else if (result === 'copied') toastState.show('Text kopiert');
             else if (result === 'cancelled') toastState.show('Teilen abgebrochen');
+            else toastState.show('Teilen und Kopieren fehlgeschlagen');
           }}
           onExport={() => { exportChatMarkdown(aiko.current, aiko.config.assistantName); toastState.show('Chat exportiert'); }}
           onRename={() => {
@@ -151,9 +213,16 @@ export default function App() {
         <Composer
           busy={aiko.busy}
           showToBottom={showToBottom}
-          onSend={aiko.send}
+          attachments={pendingFiles}
+          speechRecognition={aiko.ui.speechRecognition}
+          onSend={(text, files) => {
+            aiko.send(text, files.map(toFileAttachment));
+            setPendingFiles([]);
+          }}
+          onRemoveAttachment={(index) => setPendingFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}
           onStop={aiko.stop}
           onAttachment={() => setAttachmentOpen(true)}
+          onRequestSpeechConsent={requestSpeechConsent}
           onScrollBottom={() => messageList.current?.scrollBottom(true)}
           toast={toastState.show}
         />
@@ -174,7 +243,7 @@ export default function App() {
         onDelete={aiko.deleteChat}
       />
 
-      <AttachmentSheet open={attachmentOpen} onClose={() => setAttachmentOpen(false)} toast={toastState.show} />
+      <AttachmentSheet open={attachmentOpen} onClose={() => setAttachmentOpen(false)} onFiles={addFiles} />
 
       <Settings
         open={settingsOpen}
@@ -189,6 +258,7 @@ export default function App() {
         confirm={dialog.confirm}
         toast={toastState.show}
         initialRulesOpen={settingsRulesOpen}
+        modalOpen={Boolean(dialog.options)}
       />
 
       <Dialog options={dialog.options} onResult={dialog.result} />

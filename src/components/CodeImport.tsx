@@ -35,7 +35,7 @@ export function CodeImport({ config, onConfig, toast }: CodeImportProps) {
       <div className="sec" style={{ marginTop: 18 }}>Regeln per Code hinzufügen</div>
       <InfoBox title="Code-Format – für eine KI kopieren">
         <pre className="codepre">{RULE_CODE_DOC}</pre>
-        <button type="button" className="btn" onClick={() => { void copyText(RULE_CODE_DOC); toast('Vorlage kopiert'); }}>Vorlage kopieren</button>
+        <button type="button" className="btn" onClick={async () => { toast(await copyText(RULE_CODE_DOC) ? 'Vorlage kopiert' : 'Kopieren fehlgeschlagen'); }}>Vorlage kopieren</button>
       </InfoBox>
       <div className="field">
         <label htmlFor="ruleCodeIn">Code einfügen (eine oder mehrere Regeln)</label>
