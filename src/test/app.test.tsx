@@ -141,6 +141,45 @@ describe('React app', () => {
     expect(saved).not.toContain('PRIVATE FILE CONTENT');
   });
 
+  it('answers a question about an attached image with the image reply text', async () => {
+    window.localStorage.setItem('nova.ui.v1', JSON.stringify({ stream: false, think: false, saveHistory: true, suggest: true, theme: 'dark', calm: true }));
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Anhängen' }));
+    const image = new File(['PNG BYTES'], 'foto.png', { type: 'image/png' });
+    const fileInputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    fireEvent.change(fileInputs[2], { target: { files: [image] } });
+    expect(screen.getByRole('button', { name: 'foto.png entfernen' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Frag mich alles'), { target: { value: 'Was ist auf dem Bild zu sehen?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    await waitFor(() => expect(screen.getByText(/Bilder angehängt hast, kann ihren Inhalt aber noch nicht erkennen/)).toBeInTheDocument(), { timeout: 2_000 });
+  });
+
+  it('uses the attachment reply texts configured in the settings, separately for images and files', async () => {
+    window.localStorage.setItem('nova.ui.v1', JSON.stringify({ stream: false, think: false, saveHistory: true, suggest: true, theme: 'dark', calm: true }));
+    window.localStorage.setItem('nova.config.v2', JSON.stringify({
+      attachmentImageReply: 'BILD-ANTWORT-AUS-EINSTELLUNGEN',
+      attachmentFileReply: 'DATEI-ANTWORT-AUS-EINSTELLUNGEN',
+    }));
+    const { container } = render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anhängen' }));
+    const file = new File(['PDF BYTES'], 'bericht.pdf', { type: 'application/pdf' });
+    const fileInputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    fireEvent.change(fileInputs[2], { target: { files: [file] } });
+    fireEvent.change(screen.getByPlaceholderText('Frag mich alles'), { target: { value: 'Lies die Datei vor' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    await waitFor(() => expect(screen.getByText(/DATEI-ANTWORT-AUS-EINSTELLUNGEN/)).toBeInTheDocument(), { timeout: 2_000 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anhängen' }));
+    const image = new File(['JPG BYTES'], 'foto.jpg', { type: 'image/jpeg' });
+    const fileInputsAgain = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
+    fireEvent.change(fileInputsAgain[2], { target: { files: [image] } });
+    fireEvent.change(screen.getByPlaceholderText('Frag mich alles'), { target: { value: 'Beschreibe das Bild' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    await waitFor(() => expect(screen.getByText(/BILD-ANTWORT-AUS-EINSTELLUNGEN/)).toBeInTheDocument(), { timeout: 2_000 });
+  });
+
   it('sends a message and renders a local result', async () => {
     window.localStorage.setItem('nova.ui.v1', JSON.stringify({ stream: false, think: false, saveHistory: true, suggest: true, theme: 'dark', calm: true }));
     render(<App />);

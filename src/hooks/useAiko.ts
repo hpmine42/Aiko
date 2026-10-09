@@ -9,7 +9,19 @@ import { useTimers } from './useTimers';
 
 const randomOf = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 const LEGACY_STORAGE_KEYS = new Set<string>(Object.values(LEGACY_LS));
-const ATTACHMENT_UNSUPPORTED = 'Ich sehe, dass du Dateien angehängt hast, kann ihren Inhalt aber noch nicht auslesen oder verarbeiten. Füge den relevanten Text bitte direkt in den Chat ein.';
+const isImageAttachment = (file: FileAttachment) => /^image\//i.test(file.type || '');
+
+/**
+ * Reply shown when the user asks about attachments. Configurable in the
+ * settings, separately for images and files; as soon as a non-image file is
+ * attached, the file text is used. Empty texts fall back to the defaults.
+ */
+function attachmentReplyFor(config: AikoConfig, attachments: FileAttachment[]): string {
+  const hasFile = attachments.some((file) => !isImageAttachment(file));
+  const configured = hasFile ? config.attachmentFileReply : config.attachmentImageReply;
+  const fallback = hasFile ? DEFAULT_CONFIG.attachmentFileReply : DEFAULT_CONFIG.attachmentImageReply;
+  return configured.trim() || fallback;
+}
 
 function pickGreeting(config: AikoConfig): string {
   const greetings = config.greetings.filter((greeting) => String(greeting).trim());
@@ -453,7 +465,7 @@ export function useAiko({ toast }: UseAikoOptions) {
     storeCurrent(chat, firstSaved);
 
     if (attachments.length) {
-      startResponse(chat, prompt || 'Bitte sieh dir die angehängten Dateien an.', null, ATTACHMENT_UNSUPPORTED);
+      startResponse(chat, prompt || 'Bitte sieh dir die angehängten Dateien an.', null, attachmentReplyFor(configRef.current, attachments));
       return;
     }
 
@@ -506,7 +518,7 @@ export function useAiko({ toast }: UseAikoOptions) {
     const truncated = chat.messages.length > index + 1 ? { ...chat, messages: chat.messages.slice(0, index + 1) } : chat;
     storeCurrent(truncated);
     startResponse(truncated, user.content || (user.attachments?.length ? 'Bitte sieh dir die angehängten Dateien an.' : ''), index,
-      user.attachments?.length ? ATTACHMENT_UNSUPPORTED : undefined);
+      user.attachments?.length ? attachmentReplyFor(configRef.current, user.attachments) : undefined);
   }, [startResponse, storeCurrent]);
 
   const editUser = useCallback((index: number, text: string) => {

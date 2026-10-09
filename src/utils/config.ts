@@ -115,6 +115,9 @@ export function normalizeConfig(input: unknown): AikoConfig {
   merged.knowledge = String(merged.knowledge == null ? DEFAULT_CONFIG.knowledge : merged.knowledge);
   merged.dictionary = String(merged.dictionary == null ? DEFAULT_CONFIG.dictionary : merged.dictionary);
   merged.followFallback = String(merged.followFallback == null ? DEFAULT_CONFIG.followFallback : merged.followFallback);
+  // Reply texts shown when the user asks about attachments; empty falls back to the defaults.
+  merged.attachmentImageReply = String(merged.attachmentImageReply ?? '').trim() || DEFAULT_CONFIG.attachmentImageReply;
+  merged.attachmentFileReply = String(merged.attachmentFileReply ?? '').trim() || DEFAULT_CONFIG.attachmentFileReply;
   // Avatars are resized into local data URLs by the UI. Never load a remote
   // image URL supplied by an imported config or backup.
   merged.avatar = typeof merged.avatar === 'string' && /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(merged.avatar)

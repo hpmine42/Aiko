@@ -224,7 +224,9 @@ export function Settings({
               const greetings = value.split('\n').map((entry) => entry.trim()).filter(Boolean);
               changeConfig({ ...config, greetings: greetings.length ? greetings : clone(DEFAULT_CONFIG.greetings) });
             }} />
-            <div className="help"><code>{'{name}'}</code> wird überall durch deinen Namen ersetzt – auch in Antworten, z. B. <code>Hallo {'{name}'}! 👋</code></div>
+            <TextField label="Wenn du ein Bild anhängst und dazu fragst" rows={3} value={config.attachmentImageReply} onChange={(value) => changeConfig({ ...config, attachmentImageReply: value })} />
+            <TextField label="Wenn du eine Datei anhängst und dazu fragst" rows={3} value={config.attachmentFileReply} onChange={(value) => changeConfig({ ...config, attachmentFileReply: value })} />
+            <div className="help">Aiko liest Dateiinhalte nicht aus. Diese Texte zeigt Aiko als Antwort, wenn du eine Frage zu angehängten Bildern bzw. Dateien stellst. Leer lassen bedeutet Standardtext. <code>{'{name}'}</code> wird überall durch deinen Namen ersetzt – auch in Antworten, z. B. <code>Hallo {'{name}'}! 👋</code></div>
           </Accordion>
 
           <Accordion id="know" title="Wissen & Merkzettel">
