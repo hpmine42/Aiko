@@ -129,8 +129,8 @@ body.emptychat .disc{display:none}
 .attachment-file-meta{min-width:0;display:flex;flex-direction:column;gap:2px}
 .attachment-file-meta>span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow-wrap:anywhere;font-size:14px;font-weight:600;line-height:1.25}
 .attachment-file-meta small{color:var(--mute);font-size:12px}
-.attachment-card-image{width:60px;height:60px;overflow:hidden;border-radius:14px;background:var(--surface2);box-shadow:0 1px 4px rgba(0,0,0,.14)}
-.attachment-card-image img{display:block;width:100%;height:100%;object-fit:cover}
+.attachment-card-image{width:60px;height:60px;border-radius:14px;background:var(--surface2);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.attachment-card-image img{display:block;width:100%;height:100%;object-fit:cover;border-radius:14px}
 .attachment-remove{position:absolute;top:-7px;right:-6px;z-index:1;width:22px;height:22px;display:grid;place-items:center;border:2px solid var(--composer);border-radius:50%;background:#161616;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .attachment-remove svg{width:12px;height:12px;stroke-width:2.4}
 .attachment-remove:active{transform:scale(.94)}
