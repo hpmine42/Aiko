@@ -45,6 +45,18 @@ describe('React app', () => {
     expect(search).not.toHaveFocus();
   });
 
+  it('does not reopen the mobile keyboard when the sidebar closes after being opened while the composer was focused', async () => {
+    render(<App />);
+    const composer = screen.getByPlaceholderText('Frag mich alles');
+    composer.focus();
+    expect(composer).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Seitenleiste öffnen' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Neuer Chat' })).toHaveFocus());
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(document.getElementById('side')).toHaveAttribute('aria-hidden', 'true'));
+    expect(composer).not.toHaveFocus();
+  });
+
   it('keeps keyboard focus inside an open settings dialog', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Seitenleiste öffnen' }));

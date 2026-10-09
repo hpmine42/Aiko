@@ -22,6 +22,14 @@ function focusableElements(container: HTMLElement): HTMLElement[] {
   ));
 }
 
+const NON_TEXT_INPUT_TYPES = new Set(['hidden', 'checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color', 'image']);
+
+/** Elements that make the on-screen keyboard pop open when focused on touch devices. */
+function opensKeyboard(element: HTMLElement): boolean {
+  if (element instanceof HTMLTextAreaElement || element.isContentEditable) return true;
+  return element instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(element.type.toLowerCase());
+}
+
 /** Adds focus containment, Escape handling, and focus restoration to an open modal. */
 export function useModalFocus<T extends HTMLElement>(
   open: boolean,
@@ -83,7 +91,10 @@ export function useModalFocus<T extends HTMLElement>(
       document.removeEventListener('keydown', onKeyDown);
       const index = modalStack.lastIndexOf(token);
       if (index >= 0) modalStack.splice(index, 1);
-      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      // Restoring focus to a text field would re-open the on-screen keyboard on
+      // phones even though the user never asked to type – e.g. when the sidebar
+      // was swiped open while the composer was focused and is closed again.
+      if (previousFocus?.isConnected && !opensKeyboard(previousFocus)) previousFocus.focus({ preventScroll: true });
     };
   }, [initialFocusRef, open]);
 
