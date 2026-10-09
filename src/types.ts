@@ -57,6 +57,8 @@ export interface AikoConfig {
   defaultModel: string;
   suggestions: SuggestionConfig[];
   followFallback: string;
+  attachmentImageReply: string;
+  attachmentFileReply: string;
   knowledge: string;
   dictionary: string;
   memory: string[];

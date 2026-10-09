@@ -56,6 +56,8 @@ export const DEFAULT_CONFIG: AikoConfig = {
     }
   ],
   "followFallback": "Gute Frage! Dazu habe ich gerade keine weiteren Details hinterlegt. Magst du die Frage etwas konkreter stellen? ||| Da muss ich passen – mehr kann ich dazu im Moment nicht sagen. Frag gerne etwas anderes!",
+  "attachmentImageReply": "Ich sehe, dass du Bilder angehängt hast, kann ihren Inhalt aber noch nicht erkennen oder beschreiben. Beschreibe mir bitte kurz, was auf dem Bild zu sehen ist, oder füge den relevanten Text direkt in den Chat ein.",
+  "attachmentFileReply": "Ich sehe, dass du Dateien angehängt hast, kann ihren Inhalt aber noch nicht auslesen oder verarbeiten. Füge den relevanten Text bitte direkt in den Chat ein.",
   "knowledge": "## Öffnungszeiten\nGeöffnet ist Montag bis Freitag 9–18 Uhr, Samstag 10–14 Uhr. Sonntags geschlossen.\n\n## Über Aiko\nAiko ist ein regelbasierter Chat-Assistent, der komplett offline im Browser läuft – ohne Sprachmodell und ohne Netzwerkanfragen. Antworten kommen aus selbst geschriebenen Regeln oder aus eingebauten Werkzeugen; Rechnen, Einheiten, Datum und Text-Werkzeuge liefern echte Ergebnisse.",
   "dictionary": "",
   "memory": [],
