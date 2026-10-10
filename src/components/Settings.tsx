@@ -180,24 +180,25 @@ export function Settings({
           </Accordion>
 
           <Accordion id="rules" title={`Antworten festlegen · ${config.pairs.length} Regeln`} defaultOpen>
-            <div className="card">
-              {rules}
-              <button type="button" className="item" style={{ color: 'var(--accent2)' }} onClick={() => {
-                const pairs = [...config.pairs, { id: `p${Date.now()}`, enabled: true, patterns: [], response: '', exclude: [], priority: 0, followups: {}, suggest: [] }];
-                changeConfig({ ...config, pairs });
-                openRule(pairs.length - 1, true);
-              }}><Icon name="plus" />Neue Regel</button>
-            </div>
+            <div className="card">{rules}</div>
             <div className="help">Tippe auf eine Regel, um Stichwörter, Antworten, Folgeantworten und Vorschlags-Buttons zu ändern. Mehrere Antworten mit <code>|||</code> trennen – dann wird zufällig gewählt.</div>
-            <div className="card" style={{ marginTop: 18 }}>
-              <button type="button" className="item" onClick={() => {
-                if (testReport) setTestReport(null);
-                else { configureEngine(config); setTestReport(runRuleTests()); }
-              }}>Alle Regeln testen</button>
-            </div>
-            {testReport && <RuleTestReport rows={testReport} />}
-            <CodeImport config={config} onConfig={changeConfig} toast={toast} />
           </Accordion>
+          {/* Only existing rules collapse; creation, tests and import stay available. */}
+          <div className="card" style={{ marginTop: 10 }}>
+            <button type="button" className="item" style={{ color: 'var(--accent2)' }} onClick={() => {
+              const pairs = [...config.pairs, { id: `p${Date.now()}`, enabled: true, patterns: [], response: '', exclude: [], priority: 0, followups: {}, suggest: [] }];
+              changeConfig({ ...config, pairs });
+              openRule(pairs.length - 1, true);
+            }}><Icon name="plus" />Neue Regel</button>
+          </div>
+          <div className="card" style={{ marginTop: 18 }}>
+            <button type="button" className="item" onClick={() => {
+              if (testReport) setTestReport(null);
+              else { configureEngine(config); setTestReport(runRuleTests()); }
+            }}>Alle Regeln testen</button>
+          </div>
+          {testReport && <RuleTestReport rows={testReport} />}
+          <CodeImport config={config} onConfig={changeConfig} confirm={confirm} toast={toast} />
 
           <Accordion
             id="cmds"
@@ -344,7 +345,7 @@ function Accordion({ id, title, children, defaultOpen = false }: { id: string; t
       >
         <span>{title}</span><Icon name="chevD" />
       </button>
-      <div id={`${id}-content`} className={`accb${open ? '' : ' hidden'}`}>{children}</div>
+      <div id={`${id}-content`} className={`accb${open ? '' : ' hidden'}`} hidden={!open}>{children}</div>
     </>
   );
 }

@@ -402,9 +402,10 @@ function matchScore(query, pattern){
   }
   return { s: baseScore(query, raw) };
 }
-export function findRule(text){
+/** Read-only matching, also used to preview an import without changing cfg. */
+export function findRuleMatches(text, rules: readonly Rule[] = cfg.pairs){
   const nq = " " + norm(text) + " ", cands = [];
-  cfg.pairs.forEach(p => {
+  rules.forEach(p => {
     if(p.enabled === false || !variantsOf(p.response).length) return;
     if((p.exclude || []).some(ex => { const e = norm(ex); return e && nq.indexOf(" " + e + " ") > -1; })) return;
     let best = { s:0 }, pat = "";
@@ -412,7 +413,10 @@ export function findRule(text){
     if(best.s >= .62) cands.push({ rule:p, pattern:pat, cap:best.cap || "", score:best.s, hard:!!best.hard, prio:+p.priority || 0 });
   });
   cands.sort((a, b) => b.prio - a.prio || b.score - a.score);
-  return cands[0] || null;
+  return cands;
+}
+export function findRule(text){
+  return findRuleMatches(text)[0] || null;
 }
 
 /* Platzhalter, die beim Antworten feststehen ({name} wird erst bei der Anzeige ersetzt) */
@@ -1644,7 +1648,7 @@ function listTool(t){
 function EXTRA_TOOLS(t){ return qrTool(t) || passTool(t) || chartTool(t) || listTool(t) || timerTool(t) || randomTool(t) || baseTool(t) || colorTool(t) || vatTool(t) || priceTool(t); }
 
 /* ---------------- Regel-Testsuite ---------------- */
-function testQueryFor(pat){
+export function testQueryFor(pat){
   const raw = String(pat).trim();
   if(!raw) return null;
   if(raw.charAt(0) === "~") return null;                                   // RegEx: kein Beispieltext

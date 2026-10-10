@@ -61,6 +61,15 @@ export function findRule(text: string): RuleHit | null {
   };
 }
 
+/** All matching rules, in the same priority/score/order used by findRule. */
+export function findRuleMatches(text: string, rules: readonly Rule[]): RuleHit[] {
+  return legacy.findRuleMatches(text, rules) as RuleHit[];
+}
+
+export function testQueryFor(pattern: string): string | null {
+  return legacy.testQueryFor(pattern);
+}
+
 export function pickResponse(text: string, avoid: string | null, context: unknown): EngineResult {
   const result = legacy.pickResponse(text, avoid, context) as unknown;
   if (!result || typeof result !== 'object') throw new TypeError('Die Antwort-Engine hat kein gültiges Ergebnis geliefert.');
