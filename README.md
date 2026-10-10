@@ -97,6 +97,10 @@ aktiv: ja
 
 `regel:` und `antwort:` sind Pflicht, alles andere optional; `---` trennt mehrere Regeln, `#` beginnt einen Kommentar. Vorschlags-Buttons (`vorschlag:`) schicken ihren Text beim Antippen als neue Nachricht – sie ergeben nur Sinn, wenn es für diese Fragen bereits eine Regel gibt, sonst endet der Klick in einer Ausweichantwort.
 
+Im **Code-Einfügefeld der Einstellungen** werden gültige Regeln sofort auf mögliche Konflikte mit vorhandenen Regeln und untereinander geprüft. Die Hinweise nennen die betroffenen Regeln, eine Beispielfrage und die dabei gewinnende Regel. Die Prüfung nutzt dasselbe Matching wie der Chat, inklusive Priorität, exakten Treffern, Tippfehler-Toleranz und Ausschlüssen, ohne etwas zu speichern oder Werkzeuge auszuführen. Bei Konflikten muss der Import ausdrücklich bestätigt werden; vorhandene Regeln werden nicht gelöscht oder ersetzt. RegEx werden gegen die Beispielfragen geprüft, identische RegEx-Muster zusätzlich direkt erkannt. Überschneidungen beliebiger unterschiedlicher RegEx können unentdeckt bleiben.
+
+Ein Klick auf **„Antworten festlegen“** klappt nur die vorhandene Regelliste ein oder aus. **„Neue Regel“**, **„Alle Regeln testen“**, die Code-Vorlage und das Einfügefeld bleiben auch bei eingeklappter Liste verfügbar.
+
 Regel-Code kann auch direkt im Chat gesendet werden. Sobald eine Nachricht mit `regel:` beginnt, prüft Aiko den Code, fügt gültige Regeln hinzu und bestätigt die Anzahl der importierten Regeln. Bei Fehlern wird nichts übernommen und Aiko zeigt die betroffenen Zeilen an:
 
 ```text
