@@ -11,7 +11,7 @@ describe('React app', () => {
     expect(document.title).toBe('Aiko');
   });
 
-  it('opens settings and exposes the verbatim code-import documentation', () => {
+  it('opens settings and exposes the code-import documentation', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Seitenleiste öffnen' }));
     fireEvent.click(screen.getByRole('button', { name: /Einstellungen/ }));

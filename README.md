@@ -95,7 +95,7 @@ folge warum: Weil meine Antworten aus Regeln stammen, nicht aus einem Modell.
 aktiv: ja
 ```
 
-`regel:` und `antwort:` sind Pflicht, alles andere optional; `---` trennt mehrere Regeln, `#` beginnt einen Kommentar.
+`regel:` und `antwort:` sind Pflicht, alles andere optional; `---` trennt mehrere Regeln, `#` beginnt einen Kommentar. Vorschlags-Buttons (`vorschlag:`) schicken ihren Text beim Antippen als neue Nachricht – sie ergeben nur Sinn, wenn es für diese Fragen bereits eine Regel gibt, sonst endet der Klick in einer Ausweichantwort.
 
 Regel-Code kann auch direkt im Chat gesendet werden. Sobald eine Nachricht mit `regel:` beginnt, prüft Aiko den Code, fügt gültige Regeln hinzu und bestätigt die Anzahl der importierten Regeln. Bei Fehlern wird nichts übernommen und Aiko zeigt die betroffenen Zeilen an:
 
@@ -104,7 +104,7 @@ regel: =hallo
 antwort: Hallo {name}! Wie kann ich helfen?
 ```
 
-**Tipp:** In den Einstellungen liegt unter *Code-Format – für eine KI kopieren* ein fertiger Prompt ([`src/data/ruleCodeDoc.ts`](src/data/ruleCodeDoc.ts)). Du kannst ihn in eine KI deiner Wahl einfügen und dir daraus Regel-Code erzeugen lassen, den du entweder über *Regel-Code importieren* oder direkt im Chat einsetzt. Wichtig: Aiko selbst sendet dabei nichts – dieser Umweg passiert außerhalb der App und ist deine Entscheidung. Ungültige Zeilen werden beim Import einzeln gemeldet, statt still zu verschwinden.
+**Tipp:** In den Einstellungen liegt unter *Code-Format – für eine KI kopieren* ein fertiger Prompt ([`src/data/ruleCodeDoc.ts`](src/data/ruleCodeDoc.ts)). Du kannst ihn in eine KI deiner Wahl einfügen und dir daraus Regel-Code erzeugen lassen, den du entweder über *Regel-Code importieren* oder direkt im Chat einsetzt. Der Prompt weist die KI ausdrücklich an, **keine `vorschlag:`-Zeilen** zu erzeugen: Für die Button-Texte gäbe es noch keine Regel, ein Klick darauf würde in einer Ausweichantwort enden. Vorschlags-Buttons kannst du bei Bedarf selbst im Editor ergänzen. Wichtig: Aiko selbst sendet dabei nichts – dieser Umweg passiert außerhalb der App und ist deine Entscheidung. Ungültige Zeilen werden beim Import einzeln gemeldet, statt still zu verschwinden.
 
 ---
 
@@ -144,7 +144,7 @@ Für den GitHub-Bereich **About** (Repository-Einstellungen): Beschreibung „Re
 ```text
 src/
 ├── components/   React-Oberfläche (Chat, Sidebar, Einstellungen, TimerDock, CodeImport …)
-├── data/         Standardregeln, Slash-Befehle, unveränderter RULE_CODE_DOC-Prompt
+├── data/         Standardregeln, Slash-Befehle, RULE_CODE_DOC-Prompt für KIs (ohne „vorschlag:“)
 ├── engine/       Antwort-Engine, Rechner (NovaMath), Regel-Parser, QR-Encoder
 ├── hooks/        Zustand für Chats, Timer, localStorage, Dialoge, Toasts
 ├── utils/        Export, Teilen, Zwischenablage, Bildskalierung, Konfigurations-Normalisierung
@@ -244,7 +244,7 @@ Aiko knows only what rules and tools cover: no general knowledge, no free-form w
 
 ## Projektstruktur / Project structure
 
-`components/` React UI · `data/` default config, commands, verbatim rule prompt · `engine/` response engine, NovaMath, rule parser, QR encoder · `hooks/` chats, timers, localStorage, dialogs, toasts · `utils/` export, share, clipboard, image resize · `test/` engine and UI checks · `types.ts` shared types · `styles.css` responsive theme.
+`components/` React UI · `data/` default config, commands, rule-code prompt for AI (no `vorschlag:`) · `engine/` response engine, NovaMath, rule parser, QR encoder · `hooks/` chats, timers, localStorage, dialogs, toasts · `utils/` export, share, clipboard, image resize · `test/` engine and UI checks · `types.ts` shared types · `styles.css` responsive theme.
 
 The former single-file app has been removed; the React app is served from the repository-root `index.html`.
 

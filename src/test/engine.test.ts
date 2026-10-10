@@ -72,9 +72,15 @@ describe('Aiko behaviour engine', () => {
 });
 
 describe('rule code import', () => {
-  it('keeps the original prompt and parses all supported fields', () => {
+  it('keeps the prompt free of suggestion buttons and parses all supported fields', () => {
     expect(RULE_CODE_DOC).toContain('DEINE AUFGABE');
     expect(RULE_CODE_DOC).toContain('~/muster/flags');
+    // Der Prompt soll KIs keine „vorschlag:"-Buttons erzeugen lassen, weil es
+    // für diese Fragen noch keine Regeln gibt.
+    expect(RULE_CODE_DOC).toContain('vorschlag: (NICHT verwenden)');
+    expect(RULE_CODE_DOC).not.toContain('vorschlag: Button 1 | Button 2');
+    expect(RULE_CODE_DOC).not.toContain('vorschlag: Und deine?');
+    expect(RULE_CODE_DOC).not.toContain('vorschlag: Mehr davon');
     const parsed = parseRuleCode([
       'regel: =hallo | wetter & morgen',
       'antwort: Hallo! ||| Hey!\\nZweite Zeile',
