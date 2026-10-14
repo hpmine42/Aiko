@@ -10,6 +10,7 @@ import { iconHtml as ic } from '../components/Icon';
 import type { AikoConfig, ChatMessage, EngineResult, QrApi, Rule, RuleHit, RuleTestResult, TimerAdapter } from '../types';
 import { clone, variantsOf } from '../utils/config';
 import { isSafeRuleRegex, MAX_RULE_REGEX_INPUT_LENGTH } from '../utils/safeRegex';
+import { TOOL_HELP_LINES, feastDate, parseFeast, runTools } from './tools';
 
 let cfg: AikoConfig = clone(DEFAULT_CONFIG);
 let onConfigChange: (config: AikoConfig) => void = () => {};
@@ -33,6 +34,8 @@ export function configureEngine(
 
 export function getEngineConfig(): AikoConfig { return cfg; }
 function saveCfg(): void { onConfigChange(clone(cfg)); }
+/* Typed offline tools (src/engine/tools): statistics, fractions, loans, holidays, moon phases … */
+function modernTools(t){ return runTools(t, { config: cfg, save: saveCfg, timers: timerAdapter }); }
 const rnd = a => a[Math.floor(Math.random() * a.length)];
 function withName(t: unknown): string {
   const n = (cfg && cfg.userName) || "";
@@ -497,7 +500,7 @@ function followUp(text, avoid, prev){
   if(!(words.length <= 4 || /\b(?:das|es|dies|dazu|davon|darauf|daran|dem|der antwort)\b/i.test(t))) return null;
   /* nach einer Passwort/PIN-Antwort erzeugt „Nochmal!“ ein frisches Exemplar */
   if(kind === "nochmal" && meta.widget && meta.widget.type === "pw" && meta.widget.req){
-    const w = passTool(meta.widget.req);
+    const w = passTool(meta.widget.req) || modernTools(meta.widget.req);
     if(w) return Object.assign({}, w, { rule:null, follow:kind });
   }
   const rule = meta.rule ? cfg.pairs.find(p => p.id === meta.rule && p.enabled !== false) : null;
@@ -543,6 +546,7 @@ const HELP = "Das kann ich – komplett offline. Befehle kannst du **mit oder oh
   "- **Diagramme:** „Diagramm: Äpfel 5, Birnen 8, Kirschen 3“ – auch `Tortendiagramm`/`Liniendiagramm`, mit PNG-Download\n" +
   "- **Checklisten:** „Checkliste Einkauf: Milch, Brot“ – im Widget abhaken, ergänzen, exportieren\n" +
   "- **Merken:** „Merke dir: …“, „Was weißt du über mich?“, „Ich heiße …“\n" +
+  TOOL_HELP_LINES.join("\n") + "\n" +
   "- **Nachfragen:** „kürzer“, „einfacher“, „warum?“, „ein Beispiel?“, „mehr dazu“, „noch einen“";
 function memoryTool(t){
   let m;
@@ -753,8 +757,10 @@ function unitTool(t){
   }
   /* „pfund“ kann Gewicht sein – nur echte Eindeutige Währungen blockieren die Einheiten-Umrechnung */
   const dual1 = ambigCur(a) && unitOf(a), dual2 = ambigCur(b) && unitOf(b);
-  if((w1 && !dual1) || (w2 && !dual2))
+  if((w1 && !dual1) || (w2 && !dual2)){
+    if(!unitOf(w1 && !dual1 ? b : a)) return null;   // „1234,56 € in Worten“ ist keine Umrechnung → andere Werkzeuge
     return { text: "Eine Währung lässt sich nur in eine andere Währung umrechnen (z. B. „89 € in Dollar“), nicht in eine Länge oder ein Gewicht.", source:"unit" };
+  }
   const ua = unitOf(a), ub = unitOf(b);
   if(!ua || !ub) return null;
   if(ua.dim !== ub.dim) return { text: "„" + a.trim() + "“ (" + ua.dim + ") und „" + b.trim() + "“ (" + ub.dim + ") lassen sich nicht ineinander umrechnen.", source:"unit" };
@@ -785,6 +791,11 @@ function parseDay(s){
   const rel = { "heute":0, "morgen":1, "übermorgen":2, "gestern":-1, "vorgestern":-2 };
   if(s in rel) return { ts: todayUTC() + rel[s] * DAY, label:s };
   if(s in FEST) return { m:FEST[s][0], d:FEST[s][1], label: cap1(s) };
+  const feast = parseFeast(s);
+  if(feast){
+    if(feast.year != null){ const ts = feastDate(feast.key, feast.year); return ts == null ? null : { ts, y: feast.year, m: new Date(ts).getUTCMonth() + 1, d: new Date(ts).getUTCDate(), label: feast.label }; }
+    return { feast: feast.key, label: feast.label };
+  }
   let m, y = null, mo, d;
   if((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){ y = +m[1]; mo = +m[2]; d = +m[3]; }
   else if((m = s.match(/^(\d{1,2})\.\s*(\d{1,2})\.?\s*(\d{2}|\d{4})?$/))){ d = +m[1]; mo = +m[2]; if(m[3]) y = +m[3]; }
@@ -799,6 +810,11 @@ function parseDay(s){
 function resolveDay(p, future){
   if(p.ts != null) return p.ts;
   const y = new Date().getFullYear();
+  if(p.feast){                       // bewegliche Feste: Datum hängt vom Jahr ab
+    let ts = feastDate(p.feast, y);
+    if(future && ts < todayUTC()) ts = feastDate(p.feast, y + 1);
+    return ts;
+  }
   let ts = Date.UTC(y, p.m - 1, p.d);
   if(new Date(ts).getUTCDate() !== p.d) ts = Date.UTC(y + 1, p.m - 1, p.d);   // 29.2.
   if(future && ts < todayUTC()) ts = Date.UTC(y + 1, p.m - 1, p.d);
@@ -1190,7 +1206,7 @@ function knowledgeTool(t){
    7. Standardantwort                                                     */
 function toolChain(t){
   if(/^\/?(?:hilfe|help|was\s+kannst\s+du(?:\s+alles)?|funktionen|befehle)\s*\??$/i.test(t.trim())) return { text: HELP, source:"tool" };
-  return memoryTool(t) || textTool(t) || knowledgeTool(t) || dictTool(t) || dateTool(t) || kwTool(t) || tzTool(t) || countdownTool(t) || unitTool(t) || EXTRA_TOOLS(t) || financeTool(t) || ruleOfThree(t) || geoTool(t);
+  return memoryTool(t) || textTool(t) || knowledgeTool(t) || dictTool(t) || dateTool(t) || kwTool(t) || tzTool(t) || countdownTool(t) || unitTool(t) || EXTRA_TOOLS(t) || financeTool(t) || ruleOfThree(t) || geoTool(t) || modernTools(t);
 }
 export function pickResponse(text, avoid, ctx){
   const t = String(text || "").trim(), base = { rule:null, pattern:"", index:0, total:1 };

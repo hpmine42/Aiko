@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { TimerAdapter, TimerState } from '../types';
+import type { TimerAdapter, TimerStartOptions, TimerState, TimerStep } from '../types';
 import { LEGACY_LS, LS } from '../utils/config';
 import { readVersionedLocalJson, writeVersionedLocalJson } from './useLocalStorage';
 
@@ -14,6 +14,15 @@ export function timerRemaining(timer: TimerState, now = Date.now()): number {
   return Math.max(0, timer.paused ? Number(timer.left) || 0 : timer.end - now);
 }
 
+function normalizeChain(chain: unknown): TimerStep[] | undefined {
+  if (!Array.isArray(chain)) return undefined;
+  const steps = chain
+    .filter((step): step is TimerStep => Boolean(step && typeof step === 'object' && Number(step.dur) >= 1))
+    .map((step) => ({ dur: Math.min(86_400, Math.round(Number(step.dur))), label: String(step.label || durationWords(Number(step.dur))).slice(0, 60) }))
+    .slice(0, 40);
+  return steps.length ? steps : undefined;
+}
+
 function normalizeTimers(stored: unknown): TimerState[] {
   if (!Array.isArray(stored)) return [];
   return stored
@@ -26,7 +35,27 @@ function normalizeTimers(stored: unknown): TimerState[] {
       chat: entry.chat ? String(entry.chat) : undefined,
       paused: Boolean(entry.paused),
       left: entry.paused ? Math.max(0, Number(entry.left) || Number(entry.end) - Date.now()) : undefined,
+      kind: entry.kind ? String(entry.kind).slice(0, 30) : undefined,
+      chain: normalizeChain(entry.chain),
     }));
+}
+
+const newTimerId = (): string => `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+
+/** The timer that continues a chain after `timer` fired. */
+export function nextChainTimer(timer: TimerState, now = Date.now()): TimerState | null {
+  const [step, ...rest] = timer.chain || [];
+  if (!step) return null;
+  return {
+    id: newTimerId(),
+    end: now + step.dur * 1_000,
+    dur: step.dur,
+    label: step.label,
+    chat: timer.chat,
+    paused: false,
+    kind: timer.kind,
+    chain: rest.length ? rest : undefined,
+  };
 }
 
 function loadTimers(): TimerState[] {
@@ -108,8 +137,8 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
       skipTimerWrite.current = false;
       return;
     }
-    const saved = writeVersionedLocalJson('timers', timers.map(({ id, end, dur, label, chat, paused, left }) => ({
-      id, end, dur, label, chat, paused, left: paused ? left : undefined,
+    const saved = writeVersionedLocalJson('timers', timers.map(({ id, end, dur, label, chat, paused, left, kind, chain }) => ({
+      id, end, dur, label, chat, paused, left: paused ? left : undefined, kind, chain,
     })));
     if (!saved) onStorageErrorRef.current?.();
   }, [timers]);
@@ -119,7 +148,9 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
     const expired = timersRef.current.filter((timer) => !timer.paused && timer.end <= now);
     if (!expired.length) return;
     const ids = new Set(expired.map((timer) => timer.id));
-    replace((current) => current.filter((timer) => !ids.has(timer.id)));
+    // Chained timers (e.g. Pomodoro phases) continue automatically.
+    const followUps = expired.map((timer) => nextChainTimer(timer, now)).filter((timer): timer is TimerState => Boolean(timer));
+    replace((current) => [...current.filter((timer) => !ids.has(timer.id)), ...followUps]);
     expired.forEach((timer) => {
       onFireRef.current(timer);
       beep();
@@ -140,14 +171,16 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
     };
   }, [checkExpired]);
 
-  const start = useCallback((seconds: number) => {
+  const start = useCallback((seconds: number, options?: TimerStartOptions) => {
     const timer: TimerState = {
-      id: `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
+      id: newTimerId(),
       end: Date.now() + seconds * 1_000,
       dur: seconds,
-      label: durationWords(seconds),
+      label: options?.label || durationWords(seconds),
       chat: currentChatRef.current(),
       paused: false,
+      kind: options?.kind,
+      chain: normalizeChain(options?.chain),
     };
     replace((current) => [...current, timer]);
   }, [replace]);
@@ -156,9 +189,10 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
     replace((current) => current.filter((timer) => timer.id !== id));
   }, [replace]);
 
-  const stopAll = useCallback(() => {
-    const count = timersRef.current.length;
-    replace(() => []);
+  const stopAll = useCallback((kind?: string) => {
+    const matches = (timer: TimerState) => !kind || timer.kind === kind;
+    const count = timersRef.current.filter(matches).length;
+    replace((current) => current.filter((timer) => !matches(timer)));
     return count;
   }, [replace]);
 

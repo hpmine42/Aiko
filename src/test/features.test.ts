@@ -61,9 +61,9 @@ describe('integrated offline features', () => {
     expect(follow.text).not.toBe(joke.text);
   });
 
-  it('contains exactly 29 slash menu entries and nine extra groups', () => {
-    expect(CMD_LIST).toHaveLength(29);
-    expect(CMD_MORE).toHaveLength(9);
+  it('contains exactly 45 slash menu entries and 13 extra groups', () => {
+    expect(CMD_LIST).toHaveLength(45);
+    expect(CMD_MORE).toHaveLength(13);
     expect(CMD_LIST.every(([command]) => command.startsWith('/'))).toBe(true);
   });
 });

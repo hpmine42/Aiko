@@ -49,6 +49,14 @@ export interface UsageStats {
   tools: Record<string, number>;
 }
 
+/** Local stopwatch: `elapsed` accumulates paused time, `start` is the last (re)start. */
+export interface StopwatchState {
+  start: number;
+  elapsed: number;
+  running: boolean;
+  laps: number[];
+}
+
 export interface AikoConfig {
   assistantName: string;
   userName: string;
@@ -68,6 +76,7 @@ export interface AikoConfig {
   stats: UsageStats;
   fallback: string[];
   pairs: Rule[];
+  stopwatch?: StopwatchState | null;
 }
 
 export interface ColorWidget {
@@ -100,7 +109,11 @@ export interface ListWidget {
   name: string;
 }
 
-export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget;
+export interface StopwatchWidget {
+  type: 'stopwatch';
+}
+
+export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget | StopwatchWidget;
 
 export interface MessageMeta {
   rule: string | null;
@@ -157,6 +170,11 @@ export interface UiPreferences {
   calm: boolean;
 }
 
+export interface TimerStep {
+  dur: number;
+  label: string;
+}
+
 export interface TimerState {
   id: string;
   end: number;
@@ -165,6 +183,16 @@ export interface TimerState {
   chat?: string;
   paused: boolean;
   left?: number;
+  /** Optional grouping, e.g. „pomodoro“, so one command can stop a whole cycle. */
+  kind?: string;
+  /** Steps that start automatically, one after another, when this timer fires. */
+  chain?: TimerStep[];
+}
+
+export interface TimerStartOptions {
+  label?: string;
+  kind?: string;
+  chain?: TimerStep[];
 }
 
 export interface EngineResult {
@@ -215,6 +243,7 @@ export interface QrApi {
 
 export interface TimerAdapter {
   getTimers(): TimerState[];
-  start(seconds: number): void;
-  stopAll(): number;
+  start(seconds: number, options?: TimerStartOptions): void;
+  /** Stops all timers, or only those of the given `kind`. Returns the number stopped. */
+  stopAll(kind?: string): number;
 }

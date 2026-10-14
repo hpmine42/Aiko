@@ -122,6 +122,15 @@ export function normalizeConfig(input: unknown): AikoConfig {
   // image URL supplied by an imported config or backup.
   merged.avatar = typeof merged.avatar === 'string' && /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+$/i.test(merged.avatar)
     ? merged.avatar : '';
+  const stopwatch = raw.stopwatch && typeof raw.stopwatch === 'object' ? raw.stopwatch as unknown as Record<string, unknown> : null;
+  merged.stopwatch = stopwatch && Number.isFinite(Number(stopwatch.start))
+    ? {
+        start: Number(stopwatch.start),
+        elapsed: Math.max(0, Number(stopwatch.elapsed) || 0),
+        running: Boolean(stopwatch.running),
+        laps: Array.isArray(stopwatch.laps) ? stopwatch.laps.map(Number).filter((lap) => Number.isFinite(lap) && lap >= 0).slice(0, 200) : [],
+      }
+    : null;
   if (!merged.stats || typeof merged.stats !== 'object') merged.stats = { rules: {}, tools: {} };
   if (!merged.stats.rules || typeof merged.stats.rules !== 'object') merged.stats.rules = {};
   if (!merged.stats.tools || typeof merged.stats.tools !== 'object') merged.stats.tools = {};
@@ -141,6 +150,8 @@ function normalizeWidget(input: unknown): MessageWidget | null {
     return { type: 'pw', text: widget.text, label: String(widget.label || ''), req: String(widget.req || '') };
   if (widget.type === 'list' && typeof widget.name === 'string')
     return { type: 'list', name: widget.name };
+  if (widget.type === 'stopwatch')
+    return { type: 'stopwatch' };
   return null;
 }
 
