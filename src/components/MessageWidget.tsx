@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import type { AikoConfig, Checklist, MessageWidget as MessageWidgetType } from '../types';
+import { useEffect, useMemo, useState } from 'react';
+import type { AikoConfig, Checklist, MessageWidget as MessageWidgetType, StopwatchState } from '../types';
 import { Qr, norm } from '../engine/aikoEngine';
+import { formatStopwatch, stopwatchElapsed } from '../engine/tools';
 import { copyText, downloadBlob } from '../utils/browser';
 
 interface MessageWidgetProps {
@@ -36,7 +37,46 @@ export function MessageWidget({ widget, config, onConfig, toast }: MessageWidget
   if (widget.type === 'list') {
     return <ChecklistWidget name={widget.name} config={config} onConfig={onConfig} toast={toast} />;
   }
+  if (widget.type === 'stopwatch') return <StopwatchWidget config={config} onConfig={onConfig} toast={toast} />;
   return null;
+}
+
+function StopwatchWidget({ config, onConfig, toast }: { config: AikoConfig; onConfig: (config: AikoConfig) => void; toast: (message: string) => void }) {
+  const state = config.stopwatch ?? null;
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!state?.running) return undefined;
+    const interval = window.setInterval(() => tick((value) => value + 1), 100);
+    return () => window.clearInterval(interval);
+  }, [state?.running, state?.start]);
+  if (!state) {
+    return <div className="wsw"><div className="wsw-h">Stoppuhr</div><div className="wck-empty">Zurückgesetzt – „Stoppuhr starten“ beginnt neu.</div></div>;
+  }
+  const now = Date.now();
+  const elapsed = stopwatchElapsed(state, now);
+  const update = (next: StopwatchState | null) => onConfig({ ...config, stopwatch: next });
+  const lastLap = state.laps.length ? state.laps[state.laps.length - 1] : 0;
+  return (
+    <div className="wsw" data-running={state.running ? 'true' : 'false'}>
+      <div className="wsw-h">Stoppuhr<span className="wck-n">{state.running ? 'läuft' : 'angehalten'}</span></div>
+      <div className="wsw-t" role="timer" aria-live="off">{formatStopwatch(elapsed)}</div>
+      <div className="wsw-b">
+        <button type="button" onClick={() => update(state.running ? { ...state, running: false, elapsed, start: now } : { ...state, running: true, start: now })}>
+          {state.running ? 'Stopp' : 'Weiter'}
+        </button>
+        <button type="button" disabled={!state.running && !elapsed} onClick={() => update({ ...state, laps: [...state.laps, elapsed] })}>Runde</button>
+        <button type="button" onClick={() => { update(null); toast('Stoppuhr zurückgesetzt'); }}>Zurücksetzen</button>
+      </div>
+      {state.laps.length > 0 && (
+        <ol className="wsw-l">
+          {state.laps.map((lap, index) => (
+            <li key={`${lap}-${index}`}><span>Runde {index + 1}</span><span>{formatStopwatch(lap - (index ? state.laps[index - 1] : 0))}</span><span>{formatStopwatch(lap)}</span></li>
+          ))}
+          {state.running && <li className="wsw-cur"><span>Runde {state.laps.length + 1}</span><span>{formatStopwatch(elapsed - lastLap)}</span><span /></li>}
+        </ol>
+      )}
+    </div>
+  );
 }
 
 function QrCodeWidget({ widget, toast }: { widget: Extract<MessageWidgetType, { type: 'qr' }>; toast: (message: string) => void }) {

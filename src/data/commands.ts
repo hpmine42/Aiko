@@ -30,7 +30,23 @@ export const CMD_LIST: Command[] = [
   ["/was ist günstiger: 200 g für 1,50 € oder 500 g für 3,20 €", "Preisvergleich"],
   ["/wie viele Tage bis Weihnachten?", "Datum & Countdown"],
   ["/merke dir: …", "Etwas merken"],
-  ["/zähle Wörter: …", "Text-Werkzeuge"]
+  ["/zähle Wörter: …", "Text-Werkzeuge"],
+  ["/stoppuhr starten", "Stoppuhr mit Runden"],
+  ["/pomodoro starten", "Fokus-Timer 25/5 (4 Runden)"],
+  ["/feiertage in NRW 2026", "Gesetzliche Feiertage"],
+  ["/wann ist Ostern 2027?", "Bewegliche Feste"],
+  ["/mondphase heute", "Mondphase & Vollmond"],
+  ["/ist 2100 ein Schaltjahr?", "Schaltjahr, römische Zahlen, Zahl in Worten"],
+  ["/mittelwert von 3, 7, 12, 5", "Statistik"],
+  ["/1/3 + 1/4", "Exakte Bruchrechnung"],
+  ["/20.000 € Kredit mit 4 % über 5 Jahre", "Kreditrate & Tilgungsplan"],
+  ["/86 € mit 10 % Trinkgeld auf 4 Personen", "Trinkgeld & Rechnung teilen"],
+  ["/BMI bei 70 kg und 1,75 m", "BMI & Kalorienbedarf"],
+  ["/IBAN prüfen: …", "IBAN, ISBN & EAN prüfen"],
+  ["/SHA-256 von …", "Hash, Base64 & URL-Encoding"],
+  ["/uuid", "UUID, Blindtext, Morse & Namen"],
+  ["/teste /\\d+/g an: …", "RegEx-Tester"],
+  ["/diff: alt ||| neu", "Textvergleich"]
 ];
 /* Weitere eingebaute Sprachbefehle – Übersicht für die Einstellungen
    (Funktionieren wie CMD_LIST mit oder ohne führenden /). */
@@ -88,6 +104,40 @@ export const CMD_MORE: CommandGroup[] = [
     ["Was weißt du über mich?", "Erinnerungen anzeigen"],
     ["Vergiss: …", "Erinnerung löschen"],
     ["Was weißt du über …?", "Wissenssammlung durchsuchen"]
+  ]],
+  ["Stoppuhr & Pomodoro", [
+    ["Runde", "Zwischenzeit speichern"],
+    ["Stoppuhr stoppen / weiter / zurücksetzen", "Stoppuhr steuern"],
+    ["Pomodoro 50/10 mit 2 Runden", "Eigene Fokus- und Pausenlänge"],
+    ["Pomodoro status / Pomodoro stoppen", "Restzeit oder Abbruch"]
+  ]],
+  ["Feiertage, Mond & Zahlen", [
+    ["Ist der 3.10.2026 ein Feiertag?", "Feiertag prüfen"],
+    ["Nächster Feiertag in Bayern", "Nächster Feiertag"],
+    ["Wann ist Vollmond?", "Nächster Vollmond"],
+    ["Vollmonde 2026", "Alle Vollmonde eines Jahres"],
+    ["Ist 2100 ein Schaltjahr?", "Schaltjahr"],
+    ["2026 in römisch / MMXXVI in dezimal", "Römische Zahlen"],
+    ["1234,56 € in Worten", "Zahl in Worten"]
+  ]],
+  ["Alltagsrechner", [
+    ["Median von 1, 2, 3, 4", "Median, Standardabweichung & Co."],
+    ["Summe von 1 bis 100", "Zahlenreihe summieren"],
+    ["kürze 12/18", "Bruch kürzen"],
+    ["0,75 als Bruch", "Dezimalzahl als Bruch"],
+    ["Darlehen 300.000 € mit 3,5 % Zinsen und 2 % Tilgung", "Annuität mit Anfangstilgung"],
+    ["Rechnung 120 € durch 3", "Rechnung teilen"],
+    ["Kalorienbedarf Frau, 28 Jahre, 62 kg, 168 cm", "Grund- und Gesamtumsatz"]
+  ]],
+  ["Codieren, Prüfen & Generieren", [
+    ["Base64: Hallo Welt", "Base64 kodieren (dekodieren: „Base64 dekodieren: …“)"],
+    ["URL-encode: a b&c", "URL-Encoding"],
+    ["ISBN prüfen: 978-3-16-148410-0", "ISBN-10/13 prüfen"],
+    ["EAN prüfen: 4006381333931", "EAN/GTIN prüfen"],
+    ["Lorem ipsum 3 Absätze", "Blindtext"],
+    ["SOS in Morse", "Morsecode (zurück: „Morse dekodieren: …“)"],
+    ["Zufallsname / Nickname", "Namen erfinden"],
+    ["Ersetze /\\s+/g durch \"-\" in: a  b c", "RegEx ersetzen"]
   ]],
   ["Nachfragen & Weiterrechnen", [
     ["kürzer / einfacher", "Antwort umformulieren"],

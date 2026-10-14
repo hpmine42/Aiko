@@ -36,7 +36,7 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 1. **`/`-Befehl?** Dann hat der Befehl Vorrang, z. B. `/timer 5 Minuten`.
 2. **Folgeantwort?** „kürzer“, „warum?“, „ein Beispiel?“, „und mal 2“ – Aiko bezieht sich auf die vorherige Antwort.
 3. **Regel mit Priorität oder exakter Treffer** – gewinnt sofort.
-4. **Lokale Werkzeuge** – Einheiten, Datum, Timer, Listen, QR, Passwort, Diagramme, Text-Werkzeuge …
+4. **Lokale Werkzeuge** – Einheiten, Datum, Timer, Listen, QR, Passwort, Diagramme, Text-Werkzeuge, Statistik, Brüche, Kredit, Feiertage, Mondphase, Prüfziffern, Generatoren, Stoppuhr … (die neueren liegen typisiert unter [`src/engine/tools/`](src/engine/tools/))
 5. **Regel ohne Priorität** – normales Stichwort, tippfehlertolerant.
 6. **Offline-Rechner** – `23 × 17`, `20 % von 150`, `2x + 3 = 11`.
 7. **Meta-Antworten** – z. B. Fragen nach den eigenen Fähigkeiten.
@@ -68,7 +68,13 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Text-Werkzeuge:** sortieren, mischen, Duplikate entfernen, Groß-/Kleinschreibung, umkehren, JSON formatieren und prüfen, Wörter zählen
 - **Zahlen & Farben:** Zahlensysteme, Primfaktoren und Primzahltest, Farbumrechnung
 - **Wissen:** Deutsch-Englisch-Wörterbuch (erweiterbar), Merkzettel/Erinnerungen, eigene Wissenssammlung
-- **29 Slash-Befehle** plus Kurzformen in 9 Themengebieten – Übersicht im Chat mit `/hilfe`
+- **Statistik & Brüche:** Mittelwert, Median, Modus, Standardabweichung, Summe von 1 bis n; exakte Bruchrechnung mit Kürzen, gemischten Zahlen und Rechenweg (`1/3 + 1/4`, „0,75 als Bruch“)
+- **Kredit, Trinkgeld & Gesundheit:** Annuitätendarlehen mit Monatsrate und Tilgungsplan, Trinkgeld und Rechnung teilen, BMI mit WHO-Einordnung, Grund- und Gesamtumsatz (Mifflin-St Jeor)
+- **Feiertage & Mond:** gesetzliche Feiertage aller Bundesländer, Ostern und andere bewegliche Feste (Gauß-Formel), Zeitumstellung, Mondphase für beliebige Tage, Voll- und Neumondtermine (Meeus-Algorithmus)
+- **Zahlen & Codes:** Schaltjahr, römische Zahlen, Zahl in Worten, Base64, URL-Encoding, SHA-256, Prüfziffern für IBAN, ISBN und EAN
+- **Generatoren & Text:** UUID, Blindtext, Morsecode, Zufallsnamen, RegEx-Tester mit Treffern und Ersetzen, Textvergleich (Wort- oder Zeilen-Diff)
+- **Stoppuhr & Pomodoro:** Stoppuhr mit Runden als Widget im Chat, Pomodoro-Zyklen, die Phase für Phase automatisch weiterlaufen
+- **45 Slash-Befehle** plus Kurzformen in 13 Themengebieten – Übersicht im Chat mit `/hilfe`
 
 ### Verwaltung & Datenschutz im Alltag
 
@@ -149,7 +155,7 @@ Für den GitHub-Bereich **About** (Repository-Einstellungen): Beschreibung „Re
 src/
 ├── components/   React-Oberfläche (Chat, Sidebar, Einstellungen, TimerDock, CodeImport …)
 ├── data/         Standardregeln, Slash-Befehle, RULE_CODE_DOC-Prompt für KIs (ohne „vorschlag:“)
-├── engine/       Antwort-Engine, Rechner (NovaMath), Regel-Parser, QR-Encoder
+├── engine/       Antwort-Engine, Rechner (NovaMath), Regel-Parser, QR-Encoder, typisierte Werkzeuge unter engine/tools/
 ├── hooks/        Zustand für Chats, Timer, localStorage, Dialoge, Toasts
 ├── utils/        Export, Teilen, Zwischenablage, Bildskalierung, Konfigurations-Normalisierung
 ├── test/         Engine- und UI-Tests
@@ -215,7 +221,7 @@ Aiko is **not an AI in the sense of a language model** – that is intentional, 
 
 ## How a reply is produced
 
-Every message passes through the engine in this order ([`src/engine/aikoEngine.ts`](src/engine/aikoEngine.ts)): `/` command → follow-up answer (“shorter?”, “why?”, “and times two”) → prioritised or exact rule → local tools (units, dates, timers, lists, QR, passwords, charts, text tools) → regular rules → offline calculator → meta answers → your own knowledge base → fallback.
+Every message passes through the engine in this order ([`src/engine/aikoEngine.ts`](src/engine/aikoEngine.ts)): `/` command → follow-up answer (“shorter?”, “why?”, “and times two”) → prioritised or exact rule → local tools (units, dates, timers, lists, QR, passwords, charts, text tools, statistics, fractions, loans, holidays, moon phases, check digits, generators, stopwatch …) → regular rules → offline calculator → meta answers → your own knowledge base → fallback.
 
 ## Features
 
@@ -225,7 +231,11 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Timers with a pause/resume dock, offline QR codes (including Wi-Fi), bar/pie/line charts, interactive checklists
 - Passwords, PINs, dice, coin flips, random numbers and pickers, text tools (sort, shuffle, deduplicate, case, reverse, JSON, word count), number bases, primes, colour conversion
 - German↔English dictionary plus your own, memory notes, personal knowledge base with sources
-- 29 slash commands and short forms across 9 topics – type `/hilfe` in the chat
+- Statistics (mean, median, mode, standard deviation), exact fraction arithmetic with working steps, annuity loans with repayment schedule, tip and bill splitting, BMI and calorie needs
+- Public holidays for all German states, Easter and other movable feasts, daylight-saving dates, moon phases and full/new moon dates (Meeus), leap years, Roman numerals, numbers in words
+- Base64, URL encoding, SHA-256, IBAN/ISBN/EAN check digits, UUIDs, lorem ipsum, Morse code, random names, a regex tester and a word/line diff
+- Stopwatch with laps as a chat widget and automatic Pomodoro cycles on top of the timer dock
+- 45 slash commands and short forms across 13 topics – type `/hilfe` in the chat
 - Light/dark/system theme, avatar handling, chat pinning and renaming, Markdown chat export, full JSON backup; existing `nova.*` data from the original single-file app stays compatible
 
 ## Quick start

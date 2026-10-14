@@ -64,7 +64,8 @@ export function TimerDock({ timers, onPause, onResume, onStop, onStopped }: Time
           ? Math.min(100, Math.max(0, (1 - left / (timer.dur * 1_000)) * 100))
           : 0;
         return (
-          <div className="tdock" data-id={timer.id} key={timer.id} onClick={expand}>
+          <div className="tdock" data-id={timer.id} key={timer.id} onClick={expand} title={timer.label}>
+            {timer.kind === 'pomodoro' && <span className="tdock-k" aria-hidden="true">{/pause/i.test(timer.label) ? '☕' : '🍅'}</span>}
             <span className="tdock-t">{formatClock(left)}</span>
             <span className="tdock-bar"><i style={{ width: `${percent.toFixed(1)}%` }} /></span>
             <button

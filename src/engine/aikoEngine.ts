@@ -1,4 +1,5 @@
 import * as legacy from './aikoEngine.legacy';
+import { TOOL_SOURCE_LABELS } from './tools';
 import type { AikoConfig, EngineResult, MessageWidget, QrApi, Rule, RuleHit, RuleTestResult, TimerAdapter } from '../types';
 
 /**
@@ -8,7 +9,7 @@ import type { AikoConfig, EngineResult, MessageWidget, QrApi, Rule, RuleHit, Rul
  */
 export const RULE_CODE_DOC = legacy.RULE_CODE_DOC as string;
 export const Qr: QrApi = legacy.Qr as QrApi;
-export const SOURCE_LABEL: Record<string, string> = legacy.SOURCE_LABEL as Record<string, string>;
+export const SOURCE_LABEL: Record<string, string> = { ...(legacy.SOURCE_LABEL as Record<string, string>), ...TOOL_SOURCE_LABELS };
 
 export function configureEngine(
   config: AikoConfig,

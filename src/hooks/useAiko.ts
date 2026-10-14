@@ -5,7 +5,7 @@ import { configureEngine, pickResponse, withName } from '../engine/aikoEngine';
 import { isRuleCode, parseRuleCode, rulesWithIds } from '../engine/ruleParser';
 import { LEGACY_LS, LS, clone, defaultUi, normalizeChat, normalizeConfig, normalizeUi } from '../utils/config';
 import { readVersionedLocalJson, removeVersionedLocalValue, writeVersionedLocalJson } from './useLocalStorage';
-import { useTimers } from './useTimers';
+import { durationWords, useTimers } from './useTimers';
 
 const randomOf = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 const LEGACY_STORAGE_KEYS = new Set<string>(Object.values(LEGACY_LS));
@@ -185,11 +185,17 @@ export function useAiko({ toast }: UseAikoOptions) {
   }, [setChats]);
 
   const appendTimerMessage = useCallback((timer: TimerState) => {
+    const next = timer.chain?.[0];
+    const text = next
+      ? `⏰ **${timer.label} ist vorbei!**\n\nWeiter geht es automatisch mit **${next.label}** (${durationWords(next.dur)}) – läuft bereits.${timer.chain && timer.chain.length > 1 ? ` Danach folgen noch ${timer.chain.length - 1} Phasen.` : ' Das ist die letzte Phase.'}`
+      : timer.kind === 'pomodoro'
+        ? `🍅 **${timer.label} ist vorbei – der Pomodoro-Zyklus ist geschafft!**\n\n„Pomodoro starten“ beginnt eine neue Runde.`
+        : `⏰ **Die Zeit ist abgelaufen!**\n\nDein Timer (${timer.label}) ist vorbei.`;
     const message: AssistantMessage = {
       role: 'assistant',
-      variants: [`⏰ **Die Zeit ist abgelaufen!**\n\nDein Timer (${timer.label}) ist vorbei.`],
+      variants: [text],
       vi: 0,
-      meta: [{ rule: null, cap: '', source: 'timer', val: null }],
+      meta: [{ rule: null, cap: '', source: timer.kind === 'pomodoro' ? 'pomodoro' : 'timer', val: null }],
       ts: Date.now(),
       thoughts: [0],
     };
@@ -202,7 +208,7 @@ export function useAiko({ toast }: UseAikoOptions) {
       const chat = currentRef.current;
       storeCurrent({ ...chat, messages: [...chat.messages, message], ts: Date.now() });
     }
-    toast(`⏰ Timer abgelaufen: ${timer.label}`);
+    toast(next ? `⏰ ${timer.label} vorbei – jetzt: ${next.label}` : `⏰ Timer abgelaufen: ${timer.label}`);
   }, [setChats, storeCurrent, toast]);
 
   const timers = useTimers({
