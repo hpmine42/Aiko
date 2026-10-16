@@ -74,7 +74,17 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Zahlen & Codes:** Schaltjahr, römische Zahlen, Zahl in Worten, Base64, URL-Encoding, SHA-256, Prüfziffern für IBAN, ISBN und EAN
 - **Generatoren & Text:** UUID, Blindtext, Morsecode, Zufallsnamen, RegEx-Tester mit Treffern und Ersetzen, Textvergleich (Wort- oder Zeilen-Diff)
 - **Stoppuhr & Pomodoro:** Stoppuhr mit Runden als Widget im Chat, Pomodoro-Zyklen, die Phase für Phase automatisch weiterlaufen
-- **45 Slash-Befehle** plus Kurzformen in 13 Themengebieten – Übersicht im Chat mit `/hilfe`
+- **Kalender & Arbeitszeit:** Monatskalender mit Feiertagen und KW, Jahresübersicht, Arbeitstage/Werktage zählen und Enddaten berechnen, Feiertage pro Bundesland (Standard aus den Einstellungen)
+- **Zeit & Schlaf:** Uhrzeit- und Dauerrechnung (Pausen, Stunden in h:mm), Schlafzyklen-Rechner, Sonnenauf- und -untergang nach Ort, Sternzeichen und chinesisches Tierkreiszeichen
+- **Küche & Auto:** Küchenmaße (Tasse, EL, TL, Cups) mit Dichte für Mehl, Zucker und Co., Rezepte skalieren, Backofen-Umrechnung, Spritverbrauch, Spritkosten, Pace, Anhalteweg, Fahrzeit
+- **Schule & Finanzen:** Noten aus Punkten (IHK und Oberstufe), Notendurchschnitt, Sparpläne, Entnahmepläne, Kaufkraft bei Inflation, Verdopplungszeit
+- **Länder, Elemente & Kennzeichen:** Hauptstadt, Vorwahl, Währung, Landesinfos; Periodensystem, Molmasse; Kfz-Unterscheidungszeichen in beide Richtungen
+- **Codes & Daten:** Caesar, ROT13, Vigenère, Atbash, A1Z26, Caesar-Knacken, Buchstabieren nach DIN 5009 und NATO; CSV, Markdown-Tabellen, JSON; Häufigkeiten, Passwortstärke, WCAG-Kontrast, Farbpalette
+- **Zahlentheorie:** ggT und kgV, Teiler, Fibonacci, Binomialkoeffizient („49 über 6“), Collatz, Quersumme, Teilbarkeit
+- **Spiele:** Zahlenraten, Schere-Stein-Papier, Kopfrechnen, Galgenmännchen, Quiz – „Spiel beenden“ zeigt den Stand
+- **Erinnerungen:** Erinnerungen als Timer („Erinnere mich morgen um 9 an den Zahnarzt“). Sie feuern nur, solange Aiko im Browser geöffnet ist.
+- **Druckansicht:** Chat über das Menü drucken (ohne Seitenleiste und Eingabe)
+- **Mehr Befehle** – 56 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
 
 ### Verwaltung & Datenschutz im Alltag
 
@@ -235,7 +245,13 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Public holidays for all German states, Easter and other movable feasts, daylight-saving dates, moon phases and full/new moon dates (Meeus), leap years, Roman numerals, numbers in words
 - Base64, URL encoding, SHA-256, IBAN/ISBN/EAN check digits, UUIDs, lorem ipsum, Morse code, random names, a regex tester and a word/line diff
 - Stopwatch with laps as a chat widget and automatic Pomodoro cycles on top of the timer dock
-- 45 slash commands and short forms across 13 topics – type `/hilfe` in the chat
+- Calendar with holidays and calendar weeks, working-day and workweek counts (per German state from your settings), sleep-cycle and time/duration maths, sunrise and sunset by place, zodiac signs and the Chinese zodiac
+- Kitchen measures (cup, tablespoon, teaspoon, density for flour and sugar), recipe scaling, oven conversion, fuel consumption and cost, running pace, braking distance, school grades (IHK and upper-school points), savings and withdrawal plans, purchasing power under inflation
+- Country facts, periodic table and molar masses, German licence plate codes in both directions, Caesar/ROT13/Vigenère/Atbash/A1Z26 ciphers, DIN 5009 and NATO spelling, CSV and Markdown tables, password strength, WCAG contrast checks, number theory (gcd/lcm, divisors, Fibonacci, binomial coefficients, Collatz)
+- Mini games: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz
+- Reminders as timers (“Erinnere mich morgen um 9 an den Zahnarzt”) – they only fire while Aiko is open in the browser
+- Print view of the chat from the menu (without sidebar and composer)
+- 56 slash commands and short forms across 15 topics – type `/hilfe` in the chat
 - Light/dark/system theme, avatar handling, chat pinning and renaming, Markdown chat export, full JSON backup; existing `nova.*` data from the original single-file app stays compatible
 
 ## Quick start

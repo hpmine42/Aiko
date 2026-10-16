@@ -120,7 +120,7 @@ describe('saved chat and backup safety', () => {
     const toast = vi.fn();
     const { container } = render(<Settings
       open config={clone(DEFAULT_CONFIG)}
-      ui={{ stream: true, think: true, suggest: true, saveHistory: true, speechRecognition: false, theme: 'dark', calm: false }}
+      ui={{ stream: true, think: true, suggest: true, saveHistory: true, speechRecognition: false, theme: 'dark', calm: false, fontSize: 'medium' }}
       chats={[]} onConfig={vi.fn()} onUi={vi.fn()} onChats={vi.fn()}
       onClose={vi.fn()} onClearChats={vi.fn()} confirm={confirm} toast={toast}
     />);
@@ -144,7 +144,7 @@ describe('saved chat and backup safety', () => {
     const toast = vi.fn();
     const { container } = render(<Settings
       open config={clone(DEFAULT_CONFIG)}
-      ui={{ stream: false, think: false, suggest: true, saveHistory: true, speechRecognition: false, theme: 'dark', calm: false }}
+      ui={{ stream: false, think: false, suggest: true, saveHistory: true, speechRecognition: false, theme: 'dark', calm: false, fontSize: 'medium' }}
       chats={[]} onConfig={vi.fn()} onUi={vi.fn()} onChats={onChats}
       onClose={vi.fn()} onClearChats={vi.fn()} confirm={async () => true} toast={toast}
     />);

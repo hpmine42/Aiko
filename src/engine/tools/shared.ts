@@ -106,6 +106,22 @@ export function parseDate(raw: string, now: Date = new Date()): number | null {
   const rel: Record<string, number> = { heute: 0, morgen: 1, übermorgen: 2, gestern: -1, vorgestern: -2 };
   if (s in rel) return todayUTC(now) + rel[s] * DAY_MS;
   let m: RegExpMatchArray | null;
+  // Weekday names („Montag“, „nächsten Freitag“) resolve to the next such day after today.
+  const dayName = s.replace(/^(?:nächsten|naechsten|kommenden|diesen|nächste|naechste|kommende)\s+/, '');
+  const weekday = WEEKDAYS.findIndex((name) => name.toLowerCase() === dayName);
+  if (weekday >= 0) {
+    const today = todayUTC(now);
+    const diff = (weekday - new Date(today).getUTCDay() + 7) % 7 || 7;
+    return today + diff * DAY_MS;
+  }
+  if ((m = s.match(/^in\s+(\d{1,3})\s+(tag(?:en)?|woche(?:n)?|monat(?:en)?)$/))) {
+    const n = Number(m[1]);
+    if (m[2].startsWith('tag')) return todayUTC(now) + n * DAY_MS;
+    if (m[2].startsWith('woche')) return todayUTC(now) + n * 7 * DAY_MS;
+    return Date.UTC(now.getFullYear(), now.getMonth() + n, now.getDate());
+  }
+  if (/^(?:nächste|naechste|kommende)\s+woche$/.test(s)) return todayUTC(now) + 7 * DAY_MS;
+  if (/^(?:nächsten|naechsten|kommenden)\s+monat$/.test(s)) return Date.UTC(now.getFullYear(), now.getMonth() + 1, now.getDate());
   let y: number | null = null;
   let mo = 0;
   let d = 0;
@@ -139,3 +155,9 @@ export function randomInt(max: number): number {
 }
 
 export const pick = <T,>(list: readonly T[]): T => list[randomInt(list.length)];
+
+/** Re-orders capture groups so alternative phrasings share one handler: reorder(m, 0, 2, 1). */
+export function reorder(match: RegExpMatchArray | null, ...order: number[]): RegExpMatchArray | null {
+  if (!match) return null;
+  return order.map((index) => match[index]) as unknown as RegExpMatchArray;
+}

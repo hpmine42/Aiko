@@ -212,8 +212,9 @@ export function useTimers({ currentChatId, onFire, onStorageError }: UseTimersOp
   const adapter = useMemo<TimerAdapter>(() => ({
     getTimers: () => timersRef.current,
     start,
+    stop,
     stopAll,
-  }), [start, stopAll]);
+  }), [start, stop, stopAll]);
 
   return { timers, start, stop, stopAll, pause, resume, adapter };
 }

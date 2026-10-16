@@ -46,6 +46,17 @@ export const CMD_LIST: Command[] = [
   ["/SHA-256 von …", "Hash, Base64 & URL-Encoding"],
   ["/uuid", "UUID, Blindtext, Morse & Namen"],
   ["/teste /\\d+/g an: …", "RegEx-Tester"],
+  ["/kalender März 2026", "Monatskalender mit Feiertagen & KW"],
+  ["/arbeitstage bis Weihnachten", "Arbeitstage & Werktage zählen"],
+  ["/erinnere mich morgen um 9 an …", "Erinnerung (läuft, solange Aiko offen ist)"],
+  ["/kennzeichen BN", "Kfz-Unterscheidungszeichen"],
+  ["/sternzeichen am 14.3.", "Sternzeichen & chinesisches Tierkreiszeichen"],
+  ["/rezept von 4 auf 6 Personen: …", "Rezept umrechnen, Küchenmaße"],
+  ["/zahlenraten", "Mini-Spiele: Galgenmännchen, Quiz, Kopfrechnen"],
+  ["/caesar 3: …", "Verschlüsseln & knacken (Caesar, Vigenère)"],
+  ["/kontrast #ffffff auf #336699", "Farbkontrast nach WCAG"],
+  ["/sparplan 200 € monatlich, 6 % Zinsen, 20 Jahre", "Sparplan & Entnahmeplan"],
+  ["/was ist Wolfram?", "Periodensystem & Molmasse"],
   ["/diff: alt ||| neu", "Textvergleich"]
 ];
 /* Weitere eingebaute Sprachbefehle – Übersicht für die Einstellungen
@@ -144,5 +155,24 @@ export const CMD_MORE: CommandGroup[] = [
     ["warum? / ein Beispiel? / mehr dazu", "Nachfragen zur Antwort"],
     ["und mal 2 / davon 20 %", "Mit dem Ergebnis weiterrechnen"],
     ["Nochmal!", "Neue Antwort oder neues Passwort"]
+  ]],
+  ["Spiele & Zeitvertreib", [
+    ["Zahlenraten", "Ich denke an eine Zahl – du rätst"],
+    ["Schere Stein Papier: Stein", "Gegen Aiko antreten"],
+    ["Kopfrechnen schwer", "Kopfrechnen in drei Stufen"],
+    ["Galgenmännchen", "Wort raten, Buchstabe für Buchstabe"],
+    ["Quiz", "Allgemeinwissen-Frage (mit „weiter“ überspringen)"],
+    ["Spiel beenden", "Stand anzeigen, Spiel abbrechen"]
+  ]],
+  ["Kalender, Arbeit & Kochen", [
+    ["Kalender 2026", "Jahresübersicht mit Feiertagen & Arbeitstagen"],
+    ["Feiertage in Bayern", "Feiertage pro Bundesland (Standard aus den Einstellungen)"],
+    ["Schlafen 6:30 aufwachen", "Schlafzyklen-Rechner"],
+    ["Pace 10 km in 52:30", "Laufpace & Geschwindigkeit"],
+    ["Note bei 42 von 60 Punkten", "Punkte in Note umrechnen"],
+    ["Passwortstärke: Sommer2024!", "Passwort-Check (ohne Speicherung)"],
+    ["Morse dekodieren: ... --- ...", "Morsecode in beide Richtungen"],
+    ["Teiler von 360", "Teiler, ggT & kgV, Fibonacci"]
   ]]
+
 ];

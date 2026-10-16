@@ -126,7 +126,7 @@ export function RuleEditor({ config, index, isNew, onConfig, onClose, onDelete, 
             <li><b>Tippfehler?</b> Kein Problem: <code>hallo</code> findet auch „halo“ oder „Halllo“.</li>
             <li><b>Mehrere Begriffe verlangen:</b> <code>wetter & morgen</code> – beide Wörter müssen vorkommen.</li>
             <li><b>Rest übernehmen:</b> <code>ich mag {'{x}'}</code> setzt den übernommenen Text in <code>{'{x}'}</code> der Antwort ein.</li>
-            <li><b>Automatische Platzhalter:</b> <code>{'{datum}'}</code>, <code>{'{uhrzeit}'}</code>, <code>{'{wochentag}'}</code> und <code>{'{name}'}</code>.</li>
+            <li><b>Automatische Platzhalter:</b> <code>{'{datum}'}</code>, <code>{'{uhrzeit}'}</code>, <code>{'{wochentag}'}</code>, <code>{'{tageszeit}'}</code>, <code>{'{kw}'}</code>, <code>{'{jahr}'}</code> und <code>{'{name}'}</code>. Mit <code>{'{zufall:Hallo|Servus|Moin}'}</code> wird zufällig eine Variante gewählt.</li>
           </ul>
         </InfoBox>
         <div className="field">

@@ -77,6 +77,10 @@ export interface AikoConfig {
   fallback: string[];
   pairs: Rule[];
   stopwatch?: StopwatchState | null;
+  /** Bundesland code (e.g. „NW“) for holidays, workdays and the calendar. */
+  region?: string;
+  /** Home city for sunrise/sunset and local time questions. */
+  homeCity?: string;
 }
 
 export interface ColorWidget {
@@ -113,7 +117,15 @@ export interface StopwatchWidget {
   type: 'stopwatch';
 }
 
-export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget | StopwatchWidget;
+export interface CalendarWidget {
+  type: 'calendar';
+  year: number;
+  month: number;
+  /** Bundesland code for holiday markers, null = nationwide only. */
+  state: string | null;
+}
+
+export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget | StopwatchWidget | CalendarWidget;
 
 export interface MessageMeta {
   rule: string | null;
@@ -168,7 +180,10 @@ export interface UiPreferences {
   speechRecognition: boolean;
   theme: ThemePreference;
   calm: boolean;
+  fontSize: FontSizePreference;
 }
+
+export type FontSizePreference = 'small' | 'medium' | 'large';
 
 export interface TimerStep {
   dur: number;
@@ -244,6 +259,8 @@ export interface QrApi {
 export interface TimerAdapter {
   getTimers(): TimerState[];
   start(seconds: number, options?: TimerStartOptions): void;
+  /** Stops a single timer by id (optional for minimal adapters). */
+  stop?(id: string): void;
   /** Stops all timers, or only those of the given `kind`. Returns the number stopped. */
   stopAll(kind?: string): number;
 }

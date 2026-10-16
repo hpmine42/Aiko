@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AikoConfig, Checklist, MessageWidget as MessageWidgetType, StopwatchState } from '../types';
 import { Qr, norm } from '../engine/aikoEngine';
-import { formatStopwatch, stopwatchElapsed } from '../engine/tools';
+import { buildMonth, formatStopwatch, stopwatchElapsed } from '../engine/tools';
 import { copyText, downloadBlob } from '../utils/browser';
 
 interface MessageWidgetProps {
@@ -38,7 +38,45 @@ export function MessageWidget({ widget, config, onConfig, toast }: MessageWidget
     return <ChecklistWidget name={widget.name} config={config} onConfig={onConfig} toast={toast} />;
   }
   if (widget.type === 'stopwatch') return <StopwatchWidget config={config} onConfig={onConfig} toast={toast} />;
+  if (widget.type === 'calendar') return <CalendarWidgetView year={widget.year} month={widget.month} state={widget.state} />;
   return null;
+}
+
+const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+function CalendarWidgetView({ year, month, state }: { year: number; month: number; state: string | null }) {
+  const cal = useMemo(() => buildMonth(year, month, state), [year, month, state]);
+  const holidays = cal.weeks.flatMap((week) => week.days).filter((day): day is NonNullable<typeof day> => Boolean(day && day.holiday));
+  return (
+    <div className="wcal" role="table" aria-label={`Kalender ${MONTH_NAMES[month - 1]} ${year}`}>
+      <div className="wcal-h">{MONTH_NAMES[month - 1]} {year}</div>
+      <table>
+        <thead>
+          <tr><th className="wcal-kw" title="Kalenderwoche">KW</th>{['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((name) => <th key={name}>{name}</th>)}</tr>
+        </thead>
+        <tbody>
+          {cal.weeks.map((week) => (
+            <tr key={week.kw}>
+              <td className="wcal-kw">{week.kw}</td>
+              {week.days.map((day, index) => (
+                <td
+                  key={index}
+                  className={day ? [day.weekend ? 'we' : '', day.holiday ? 'hol' : '', day.today ? 'today' : ''].filter(Boolean).join(' ') : 'empty'}
+                  title={day?.holiday || undefined}
+                  aria-label={day ? `${day.day}. ${MONTH_NAMES[month - 1]}${day.holiday ? `, ${day.holiday}` : ''}${day.today ? ', heute' : ''}` : undefined}
+                >
+                  {day ? day.day : ''}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {holidays.length > 0 && (
+        <div className="wcal-f">{holidays.map((day) => `${day.day}. ${day.holiday}`).join(' · ')}</div>
+      )}
+    </div>
+  );
 }
 
 function StopwatchWidget({ config, onConfig, toast }: { config: AikoConfig; onConfig: (config: AikoConfig) => void; toast: (message: string) => void }) {

@@ -13,6 +13,20 @@ import { fromMorse, toMorse, uuid } from '../engine/tools/generators';
 import { diffTokens } from '../engine/tools/diff';
 import { POMODORO_KIND, formatStopwatch, pomodoroPlan } from '../engine/tools/productivity';
 import { amortize, annuity } from '../engine/tools/loan';
+import { buildMonth, isoWeek } from '../engine/tools/calendar';
+import { addWorkdays, countWorkdays } from '../engine/tools/workdays';
+import { parseClock, parseDuration } from '../engine/tools/timecalc';
+import { activeGame, resetGames } from '../engine/tools/games';
+import { REMINDER_KIND } from '../engine/tools/reminders';
+import { chineseZodiac } from '../engine/tools/zodiac';
+import { caesar, crackCaesar, vigenere, atbash } from '../engine/tools/cipher';
+import { analyzePassword } from '../engine/tools/pwstrength';
+import { contrastRatio, parseColor, toHex } from '../engine/tools/contrast';
+import { markdownTable, parseCsv } from '../engine/tools/data';
+import { findCountry } from '../engine/tools/countries';
+import { findElement, molarMass } from '../engine/tools/elements';
+import { binomial, collatz, divisors, gcd } from '../engine/tools/numbertheory';
+import { gradeFor, pointsToGrade } from '../engine/tools/grades';
 import { clone } from '../utils/config';
 import type { AikoConfig, AssistantMessage, TimerStartOptions, TimerState } from '../types';
 
@@ -21,6 +35,7 @@ let timers: TimerState[];
 let started: Array<{ seconds: number; options?: TimerStartOptions }>;
 
 beforeEach(() => {
+  resetGames();
   config = clone(DEFAULT_CONFIG);
   timers = [];
   started = [];
@@ -341,5 +356,131 @@ describe('stopwatch and pomodoro', () => {
     expect(ask('Pomodoro 50/10 mit 2 Runden').text).toContain('2 × 50 Minuten');
     expect(started[1].seconds).toBe(3000);
     expect(started[1].options?.chain).toHaveLength(3);
+  });
+});
+
+describe('neue Werkzeuge', () => {
+  it('berechnet Kalenderwochen und Monatsraster', () => {
+    expect(isoWeek(Date.UTC(2026, 0, 1))).toEqual({ week: 1, year: 2026 });
+    expect(isoWeek(Date.UTC(2024, 11, 31))).toEqual({ week: 1, year: 2025 });
+    const october = buildMonth(2026, 10, null, new Date(2026, 9, 16));
+    const days = october.weeks.flatMap((week) => week.days).filter(Boolean);
+    expect(days).toHaveLength(31);
+    expect(days.find((cell) => cell!.day === 3)!.holiday).toContain('Einheit');
+    expect(ask('Kalender 2026').text).toContain('365 Tage');
+    expect(ask('Zeig mir den Oktober').text).toContain('Oktober 2026');
+  });
+
+  it('zählt Arbeitstage und rechnet mit ihnen', () => {
+    expect(countWorkdays(Date.UTC(2026, 2, 1), Date.UTC(2026, 2, 31), null).count).toBe(22);
+    expect(countWorkdays(Date.UTC(2026, 11, 1), Date.UTC(2026, 11, 31), null).count).toBe(22);
+    expect(addWorkdays(Date.UTC(2026, 9, 16), 10, null)).toBe(Date.UTC(2026, 9, 30));
+    expect(ask('Wie viele Arbeitstage bis Weihnachten?').text).toContain('Arbeitstage');
+    expect(ask('Arbeitstage 2026').text).toContain('im Jahr 2026');
+  });
+
+  it('nutzt das Bundesland aus den Einstellungen für Feiertage', () => {
+    expect(ask('Ist der 3.10.2026 ein Feiertag?').text).toContain('Tag der Deutschen Einheit');
+    config.region = 'BY';
+    configureEngine(config);
+    expect(ask('Feiertage 2026').text).toContain('in Bayern');
+  });
+
+  it('versteht Uhrzeiten und Dauern', () => {
+    expect(parseClock('8:15')).toBe(495);
+    expect(parseDuration('2 h 45 min')).toBe(165);
+    expect(parseDuration('1,5 h')).toBe(90);
+    expect(ask('8:15 bis 17:30 mit 45 Minuten Pause').text).toContain('8 h 30 min');
+  });
+
+  it('erkennt Sternzeichen und chinesische Tierkreiszeichen', () => {
+    expect(ask('Sternzeichen am 14.3.').text).toContain('Fische');
+    expect(chineseZodiac(1990).animal).toContain('Pferd');
+    expect(ask('Chinesisches Tierkreiszeichen 1990').text).toContain('Jahr des Pferdes');
+  });
+
+  it('rechnet Küchenmaße und skaliert Rezepte', () => {
+    expect(ask('3 EL Öl in ml').text).toContain('45 ml');
+    expect(ask('1 Tasse in ml').text).toContain('250 ml');
+    const recipe = ask('Rezept 4 auf 2 Personen: 200 g Mehl, 2 Eier').text;
+    expect(recipe).toContain('für 2 statt 4');
+    expect(recipe).toContain('100 g Mehl');
+  });
+
+  it('bewertet Schlafzeiten mit 90-Minuten-Zyklen', () => {
+    expect(ask('Wann aufstehen, wenn ich um 23 Uhr schlafen gehe?').text).toContain('06:45 Uhr');
+    expect(ask('Wann sollte ich um 23:00 schlafen?').text).toContain('06:45 Uhr');
+  });
+
+  it('verschlüsselt, entschlüsselt und knackt Caesar-Codes', () => {
+    expect(caesar('Hallo Welt', 3)).toBe('Kdoor Zhow');
+    expect(caesar(caesar('Hallo Welt', 3), -3)).toBe('Hallo Welt');
+    expect(vigenere('Angriff', 'LEMON')).toBe('Lrsfvqj');
+    expect(vigenere(vigenere('Angriff', 'LEMON'), 'LEMON', true)).toBe('Angriff');
+    expect(atbash('Hallo')).toBe('Szool');
+    expect(crackCaesar('Kdoor Zhow')[0].text).toBe('Hallo Welt');
+    expect(ask('Buchstabiere Müller').text).toContain('Umlaut Unna');
+  });
+
+  it('bewertet Passwörter und Farbkontraste', () => {
+    expect(ask('Wie sicher ist das Passwort korrekt-pferd-batterie-heft?').text).toContain('sehr stark');
+    expect(analyzePassword('abc').score).toBeLessThan(analyzePassword('korrekt-pferd-batterie-heft').score);
+    expect(contrastRatio([255, 255, 255], [0, 0, 0])).toBeCloseTo(21, 0);
+    expect(parseColor('#336699')).toEqual([51, 102, 153]);
+    expect(toHex([51, 102, 153])).toBe('#336699');
+    expect(ask('Kontrast #ffffff auf #336699').text).toContain('6:1');
+  });
+
+  it('verarbeitet CSV, Markdown und Tabellen', () => {
+    expect(parseCsv('Name;Alter\nAnna;3').delimiter).toBe(';');
+    expect(markdownTable([['a', 'b'], ['1', '2']])).toContain('| a | b |');
+  });
+
+  it('liefert Länder-, Element- und Molmasse-Infos', () => {
+    expect(findCountry('Japan')?.capital).toBe('Tokio');
+    expect(ask('Hauptstadt von Portugal').text).toContain('Lissabon');
+    expect(findElement('Wolfram')?.symbol).toBe('W');
+    expect(ask('Was ist Wolfram?').text).toContain('Wolfram (W)');
+    expect(molarMass('H2O')!.mass).toBeCloseTo(18.015, 2);
+  });
+
+  it('rechnet Zahlentheorie', () => {
+    expect(gcd([48n, 36n, 120n])).toBe(12n);
+    expect(divisors(360)).toHaveLength(24);
+    expect(binomial(49, 6)).toBe(13983816n);
+    expect(collatz(27).steps).toBe(111);
+    expect(ask('Quersumme 98765').text).toContain('35');
+  });
+
+  it('berechnet Noten aus Punkten', () => {
+    expect(gradeFor(75)[0]).toBe(3);
+    expect(pointsToGrade(11)).toContain('2');
+    expect(ask('Note bei 42 von 60 Punkten').text).toContain('Note 3');
+  });
+
+  it('plant Sparpläne und Kaufkraft', () => {
+    expect(ask('Sparplan 200 € monatlich, 6 % Zinsen, 20 Jahre').text).toContain('92.408,18');
+    expect(ask('Kaufkraft von 1.000 € in 20 Jahren bei 2 % Inflation').text).toContain('672,97');
+  });
+
+  it('startet Spiele und beendet sie wieder', () => {
+    ask('Galgenmännchen');
+    expect(activeGame()).toBe('hangman');
+    ask('Spiel beenden');
+    expect(activeGame()).toBeNull();
+    ask('Spiel Zahlenraten');
+    expect(activeGame()).toBe('guess');
+  });
+
+  it('plant Erinnerungen als Timer', () => {
+    ask('Erinnere mich morgen um 9 an den Zahnarzt');
+    expect(started.at(-1)?.options?.kind).toBe(REMINDER_KIND);
+  });
+
+  it('findet Kfz-Kennzeichen', () => {
+    expect(ask('Kennzeichen BN').text).toContain('Bonn');
+    expect(ask('Woher kommt das Kennzeichen GAP?').text).toContain('Garmisch');
+    expect(ask('Kennzeichen von Bonn').text).toContain('BN');
+    expect(ask('Kennzeichen in Bayern').text).toContain('Kennzeichen in Bayern');
   });
 });
