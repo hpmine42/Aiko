@@ -386,16 +386,19 @@ body.calm *{animation-duration:.01s!important;transition-duration:.01s!important
 button.scrim{border-radius:0}
 
 /* Kalender-Widget */
-.wcal{margin:10px 0 4px;display:inline-block;max-width:100%;border:1px solid var(--line);border-radius:16px;padding:10px 12px;background:var(--hover)}
-.wcal-h{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;opacity:.7;margin-bottom:6px}
-.wcal table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.wcal th{font-weight:600;opacity:.6;font-size:11px;padding:2px 0 6px;text-align:center}
-.wcal td{width:32px;height:30px;text-align:center;border-radius:8px}
-.wcal td.we{opacity:.55}
-.wcal td.hol{background:color-mix(in srgb,var(--accent) 22%,transparent);font-weight:600;opacity:1}
-.wcal td.today{outline:2px solid var(--accent2);outline-offset:-2px;font-weight:700;opacity:1}
-.wcal .wcal-kw{opacity:.45;font-size:11px;width:28px;border-right:1px solid var(--line);padding-right:4px}
-.wcal-f{margin-top:8px;font-size:12px;opacity:.75;max-width:280px}
+.wcal{margin:10px 0 4px;display:block;width:min(100%,330px);box-sizing:border-box;border:1px solid var(--line);border-radius:16px;padding:12px 14px 10px;background:var(--hover)}
+.wcal-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;opacity:.8;margin-bottom:10px}
+.wcal-sub{text-transform:none;letter-spacing:0;font-weight:500;opacity:.75;font-size:12px}
+.wcal-g{display:grid;grid-template-columns:24px repeat(7,minmax(0,1fr));gap:3px;align-items:center}
+.wcal-kwh,.wcal-dh{font-size:11px;font-weight:600;opacity:.6;text-align:center;padding-bottom:4px}
+.wcal-kwh{text-align:right;padding-right:4px;opacity:.45;font-weight:500}
+.wcal-kw{font-size:11px;opacity:.45;text-align:right;padding-right:4px;font-variant-numeric:tabular-nums}
+.wcal-c{height:32px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-variant-numeric:tabular-nums;min-width:0;box-sizing:border-box}
+.wcal-c.we{opacity:.5}
+.wcal-c.hol{background:color-mix(in srgb,var(--accent) 22%,transparent);font-weight:600;opacity:1}
+.wcal-c.today{box-shadow:inset 0 0 0 2px var(--accent2);font-weight:700;opacity:1}
+.wcal-c.empty{height:32px}
+.wcal-f{margin-top:10px;font-size:12px;opacity:.75;line-height:1.5}
 
 /* Druckansicht: nur der Verlauf, ohne Seitenleiste, Kopf- und Eingabezeile, Menüs und Timer. */
 @media print {
