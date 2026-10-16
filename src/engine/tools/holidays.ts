@@ -288,10 +288,12 @@ export const holidayTool: Tool = {
     const s = clean(input);
     const today = todayUTC(context.now());
     const thisYear = context.now().getFullYear();
+    /** Bundesland from the settings, used whenever the question does not name one. */
+    const home = context.config.region && STATES[context.config.region] ? context.config.region : null;
     let m: RegExpMatchArray | null;
 
     if ((m = s.match(/^(?:wann\s+ist\s+(?:der\s+)?nächste[rs]?|wann\s+ist\s+(?:der\s+)?naechste[rs]?|nächste[rs]?|naechste[rs]?|wann\s+ist\s+wieder\s+(?:ein\s+)?)\s*(?:gesetzliche[rs]?\s+)?feiertag(?:\s+(?:in|im)\s+(.+))?$/i))) {
-      return nextReply(m[1] ? parseState(m[1]) : null, today);
+      return nextReply(m[1] ? parseState(m[1]) : home, today);
     }
     if ((m = s.match(/^(?:ist|war|wird)\s+(?:der\s+|am\s+)?(.+?)\s+(?:ein\s+|eine?n\s+)?(?:gesetzlicher\s+)?feiertag(?:\s+(?:in|im)\s+(.+))?$/i))
       || (m = s.match(/^feiertag\s+(?:am\s+)?(.+?)(?:\s+(?:in|im)\s+(.+))?\s*$/i))) {
@@ -305,11 +307,11 @@ export const holidayTool: Tool = {
         }
       }
       if (ts == null) return m[0].toLowerCase().startsWith('feiertag') ? null : { text: `Das Datum „${m[1]}“ verstehe ich nicht – versuche z. B. „Ist der 3.10.2026 ein Feiertag?“ oder „Ist morgen ein Feiertag?“.`, source: 'holiday' };
-      return checkReply(ts, m[2] ? parseState(m[2]) : null, today);
+      return checkReply(ts, m[2] ? parseState(m[2]) : home, today);
     }
     if ((m = s.match(/^(?:welche\s+|alle\s+|zeige?\s+(?:mir\s+)?(?:die\s+|alle\s+)?|liste\s+(?:der\s+)?)?(?:gesetzlichen?\s+)?feiertage(?:\s+gibt\s+es|\s+haben\s+wir|\s+sind)?(?:\s+(?:in|im|für|fuer)\s+(?!jahr\b)(.+?))?(?:\s+(?:im\s+jahr\s+|in\s+)?(\d{4}))?$/i))) {
       const stateText = m[1] ? m[1].replace(/\s+\d{4}$/, '') : '';
-      const state = stateText ? parseState(stateText) : null;
+      const state = stateText ? parseState(stateText) : home;
       if (stateText && !state && !/deutschland|bundesweit|de\b/i.test(stateText)) return { text: `„${stateText}“ kenne ich nicht als Bundesland. Beispiele: „Feiertage in Bayern 2026“, „Feiertage NRW“, „Feiertage 2027“.`, source: 'holiday' };
       return listReply(m[2] ? +m[2] : thisYear, state, today);
     }
@@ -317,7 +319,7 @@ export const holidayTool: Tool = {
       const yearMatch = m[1].match(/(\d{4})/);
       const state = parseState(m[1].replace(/\d{4}/, ''));
       if (!state && !yearMatch) return null;
-      return listReply(yearMatch ? +yearMatch[1] : thisYear, state, today);
+      return listReply(yearMatch ? +yearMatch[1] : thisYear, state || home, today);
     }
     let name: string | null = null;
     if ((m = s.match(/^(?:wann\s+(?:ist|war|wird|fällt|faellt|feiern\s+wir|haben\s+wir)|an\s+welchem\s+(?:tag|datum)\s+ist|welches\s+datum\s+hat|datum\s+(?:von|für|fuer)|wann\s+beginnt|wann\s+endet|wann\s+startet)\s+(.+?)(?:\s+(?:dieses|nächstes|naechstes)\s+jahr)?$/i))) name = m[1];

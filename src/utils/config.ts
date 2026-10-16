@@ -131,6 +131,8 @@ export function normalizeConfig(input: unknown): AikoConfig {
         laps: Array.isArray(stopwatch.laps) ? stopwatch.laps.map(Number).filter((lap) => Number.isFinite(lap) && lap >= 0).slice(0, 200) : [],
       }
     : null;
+  merged.region = typeof raw.region === 'string' && /^[A-Z]{2}$/.test(raw.region) ? raw.region : '';
+  merged.homeCity = typeof raw.homeCity === 'string' ? raw.homeCity.trim().slice(0, 60) : '';
   if (!merged.stats || typeof merged.stats !== 'object') merged.stats = { rules: {}, tools: {} };
   if (!merged.stats.rules || typeof merged.stats.rules !== 'object') merged.stats.rules = {};
   if (!merged.stats.tools || typeof merged.stats.tools !== 'object') merged.stats.tools = {};
@@ -152,6 +154,8 @@ function normalizeWidget(input: unknown): MessageWidget | null {
     return { type: 'list', name: widget.name };
   if (widget.type === 'stopwatch')
     return { type: 'stopwatch' };
+  if (widget.type === 'calendar' && typeof widget.year === 'number' && typeof widget.month === 'number' && Number.isInteger(widget.year) && Number.isInteger(widget.month) && widget.month >= 1 && widget.month <= 12)
+    return { type: 'calendar', year: widget.year, month: widget.month, state: typeof widget.state === 'string' && /^[A-Z]{2}$/.test(widget.state) ? widget.state : null };
   return null;
 }
 
@@ -232,6 +236,7 @@ export const defaultUi = (theme: unknown = 'dark'): UiPreferences => ({
   speechRecognition: false,
   theme: theme === 'system' || theme === 'light' || theme === 'dark' ? theme : 'dark',
   calm: false,
+  fontSize: 'medium',
 });
 
 export function normalizeUi(input: unknown, legacyTheme?: unknown): UiPreferences {
@@ -246,6 +251,7 @@ export function normalizeUi(input: unknown, legacyTheme?: unknown): UiPreference
   value.saveHistory = typeof raw.saveHistory === 'boolean' ? raw.saveHistory : defaults.saveHistory;
   value.speechRecognition = raw.speechRecognition === true;
   value.calm = typeof raw.calm === 'boolean' ? raw.calm : defaults.calm;
+  value.fontSize = raw.fontSize === 'small' || raw.fontSize === 'large' ? raw.fontSize : 'medium';
   return value;
 }
 

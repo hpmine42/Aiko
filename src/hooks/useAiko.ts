@@ -190,12 +190,14 @@ export function useAiko({ toast }: UseAikoOptions) {
       ? `⏰ **${timer.label} ist vorbei!**\n\nWeiter geht es automatisch mit **${next.label}** (${durationWords(next.dur)}) – läuft bereits.${timer.chain && timer.chain.length > 1 ? ` Danach folgen noch ${timer.chain.length - 1} Phasen.` : ' Das ist die letzte Phase.'}`
       : timer.kind === 'pomodoro'
         ? `🍅 **${timer.label} ist vorbei – der Pomodoro-Zyklus ist geschafft!**\n\n„Pomodoro starten“ beginnt eine neue Runde.`
-        : `⏰ **Die Zeit ist abgelaufen!**\n\nDein Timer (${timer.label}) ist vorbei.`;
+        : timer.kind === 'reminder'
+          ? `🔔 **Erinnerung:** ${timer.label.replace(/^Erinnerung:\s*/, '')}`
+          : `⏰ **Die Zeit ist abgelaufen!**\n\nDein Timer (${timer.label}) ist vorbei.`;
     const message: AssistantMessage = {
       role: 'assistant',
       variants: [text],
       vi: 0,
-      meta: [{ rule: null, cap: '', source: timer.kind === 'pomodoro' ? 'pomodoro' : 'timer', val: null }],
+      meta: [{ rule: null, cap: '', source: timer.kind === 'pomodoro' ? 'pomodoro' : timer.kind === 'reminder' ? 'reminders' : 'timer', val: null }],
       ts: Date.now(),
       thoughts: [0],
     };
@@ -261,7 +263,9 @@ export function useAiko({ toast }: UseAikoOptions) {
     document.body.classList.toggle('emptychat', current.messages.length === 0);
     document.body.classList.toggle('calm', Boolean(ui.calm));
     document.body.classList.toggle('busy', generatingIndex != null);
-  }, [config.assistantName, current.messages.length, generatingIndex, ui.calm]);
+    document.body.classList.toggle('font-small', ui.fontSize === 'small');
+    document.body.classList.toggle('font-large', ui.fontSize === 'large');
+  }, [config.assistantName, current.messages.length, generatingIndex, ui.calm, ui.fontSize]);
 
   const updateChat = useCallback((chatId: string, updater: (chat: Chat) => Chat) => {
     if (currentRef.current.id === chatId) {

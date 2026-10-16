@@ -14,23 +14,66 @@ import { generatorTool } from './generators';
 import { regexTool } from './regexTester';
 import { diffTool } from './diff';
 import { productivityTool } from './productivity';
+import { sunTool } from './sun';
+import { workdayTool } from './workdays';
+import { timeTool } from './timecalc';
+import { zodiacTool } from './zodiac';
+import { vehicleTool } from './vehicle';
+import { cookingTool } from './cooking';
+import { sleepTool } from './sleep';
+import { numberTheoryTool } from './numbertheory';
+import { savingsTool } from './savings';
+import { dataTool } from './data';
+import { cipherTool } from './cipher';
+import { passwordStrengthTool } from './pwstrength';
+import { contrastTool } from './contrast';
+import { countryTool } from './countries';
+import { elementTool } from './elements';
+import { gradeTool } from './grades';
+import { gameTool } from './games';
+import { calendarTool } from './calendar';
+import { plateTool } from './plates';
+import { reminderTool } from './reminders';
 
 export type { Tool, ToolContext, ToolResult } from './types';
 export { parseFeast, feastDate } from './holidays';
 export { formatStopwatch, stopwatchElapsed, POMODORO_KIND } from './productivity';
+export { buildMonth, isoWeek } from './calendar';
+export { REMINDER_KIND } from './reminders';
+export { resetGames, activeGame } from './games';
 
 /** Order matters: more specific keyword tools first, generic arithmetic (fractions) last. */
 export const TOOLS: readonly Tool[] = [
+  gameTool,
+  reminderTool,
   productivityTool,
+  calendarTool,
+  workdayTool,
   holidayTool,
+  sunTool,
   moonTool,
+  zodiacTool,
+  sleepTool,
+  timeTool,
   statsTool,
   loanTool,
+  savingsTool,
   tipTool,
   healthTool,
+  vehicleTool,
+  cookingTool,
+  gradeTool,
   numbersTool,
+  numberTheoryTool,
   checkDigitTool,
   encodingTool,
+  cipherTool,
+  passwordStrengthTool,
+  contrastTool,
+  countryTool,
+  elementTool,
+  plateTool,
+  dataTool,
   generatorTool,
   regexTool,
   diffTool,

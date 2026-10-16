@@ -7,6 +7,8 @@ import { BACKUP_FORMAT_VERSION, MAX_BACKUP_SIZE_BYTES, clone, normalizeBackup, n
 import { copyText, downloadBlob, resizeAvatar } from '../utils/browser';
 import type { DialogOptions } from './Dialog';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { STATES } from '../engine/tools/holidays';
+import { CITIES } from '../engine/tools/cities';
 import { CodeImport } from './CodeImport';
 import { Icon } from './Icon';
 import { RuleEditor } from './RuleEditor';
@@ -154,6 +156,13 @@ export function Settings({
               }}>Profilbild löschen</button>}
               <label className="item">Dein Name<input className="txt" type="text" placeholder="optional" value={config.userName} onChange={(event) => changeConfig({ ...config, userName: event.target.value.trimStart() })} /></label>
               <label className="item">Name des Assistenten<input className="txt" type="text" value={config.assistantName} onChange={(event) => changeConfig({ ...config, assistantName: event.target.value || 'Aiko' })} /></label>
+              <label className="item">Bundesland<select className="txt" value={config.region || ''} onChange={(event) => changeConfig({ ...config, region: event.target.value })}>
+                <option value="">– keins –</option>
+                {Object.entries(STATES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+              </select></label>
+              <label className="item">Heimatort<input className="txt" type="text" list="aiko-cities" placeholder="z. B. Bonn" value={config.homeCity || ''} onChange={(event) => changeConfig({ ...config, homeCity: event.target.value })} /></label>
+              <datalist id="aiko-cities">{CITIES.map((city) => <option key={city.name} value={city.name} />)}</datalist>
+              <div className="help">Bundesland und Heimatort bleiben auf dem Gerät. Sie dienen als Standard für Feiertage, Arbeitstage, den Kalender sowie Sonnenauf- und -untergang („Wann geht die Sonne unter?“).</div>
             </div>
           </Accordion>
 
@@ -165,6 +174,11 @@ export function Settings({
                 ))}
               </div></div>
               <label className="item">Animationen reduzieren<input type="checkbox" className="sw" checked={ui.calm} onChange={(event) => onUi({ ...ui, calm: event.target.checked })} /></label>
+              <div className="item">Schriftgröße<div className="seg">
+                {([['small', 'Klein'], ['medium', 'Normal'], ['large', 'Groß']] as const).map(([fontSize, label]) => (
+                  <button type="button" key={fontSize} className={ui.fontSize === fontSize ? 'on' : ''} onClick={() => onUi({ ...ui, fontSize })}>{label}</button>
+                ))}
+              </div></div>
             </div>
           </Accordion>
 
@@ -259,7 +273,7 @@ export function Settings({
             <button type="button" className="item danger" onClick={async () => {
               if (!(await confirm({ title: 'Auf Standard zurücksetzen?', text: 'Alle eigenen Regeln, Namen und Einstellungen werden durch die Standardwerte ersetzt.', ok: 'Zurücksetzen', danger: true }))) return;
               changeConfig(normalizeConfig(null));
-              onUi(normalizeUi({ stream: true, think: true, suggest: true, saveHistory: true, theme: 'dark', calm: false }));
+              onUi(normalizeUi({ stream: true, think: true, suggest: true, saveHistory: true, theme: 'dark', calm: false, fontSize: 'medium' }));
               toast('Zurückgesetzt');
             }}>Auf Standard zurücksetzen</button>
           </div>

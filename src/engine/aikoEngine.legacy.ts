@@ -429,8 +429,15 @@ function fillDyn(t, capVal){
     .replace(/\{x\}/gi, capVal || "")
     .replace(/\{datum\}/gi, d.toLocaleDateString("de-DE", { day:"numeric", month:"long", year:"numeric" }))
     .replace(/\{uhrzeit\}/gi, d.toLocaleTimeString("de-DE", { hour:"2-digit", minute:"2-digit" }))
-    .replace(/\{wochentag\}/gi, d.toLocaleDateString("de-DE", { weekday:"long" }));
+    .replace(/\{wochentag\}/gi, d.toLocaleDateString("de-DE", { weekday:"long" }))
+    .replace(/\{tageszeit\}/gi, tageszeit(d))
+    .replace(/\{kw\}/gi, String(kalenderwoche(d)))
+    .replace(/\{jahr\}/gi, String(d.getFullYear()))
+    .replace(/\{zufall:([^}]+)\}/gi, (_, list) => { const opts = list.split("|").map((x) => x.trim()).filter(Boolean); return opts.length ? opts[Math.floor(Math.random() * opts.length)] : ""; });
 }
+/* Platzhalter-Helfer für Regeln: {tageszeit} und {kw}. */
+function tageszeit(d){ const h = d.getHours(); return h < 5 ? "Nacht" : h < 11 ? "Morgen" : h < 14 ? "Mittag" : h < 18 ? "Nachmittag" : h < 22 ? "Abend" : "Nacht"; }
+function kalenderwoche(d){ const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7); }
 function fallbackList(){ const f = variantsOf(cfg.fallback.join("|||")); return f.length ? f : DEFAULT_CONFIG.fallback; }
 
 /* Ein Wort oder eine Zahl allein wird benannt, statt „mehr Infos“ zu verlangen. */
@@ -558,7 +565,11 @@ function memoryTool(t){
   if(/^(?:was\s+(?:hast\s+du\s+dir\s+gemerkt|weißt\s+du\s+(?:über|von)\s+(?:mir|mich))|zeig(?:e)?\s+(?:mir\s+)?(?:meine\s+)?erinnerungen|meine\s+erinnerungen|erinnerungen)\s*\??$/i.test(t)){
     const list = cfg.memory.slice();
     if(cfg.userName) list.unshift("Du heißt {name}.");
-    return { text: list.length ? "Das habe ich mir gemerkt:\n\n" + list.map(x => "- " + x).join("\n") : "Ich habe mir noch nichts gemerkt. Sag einfach „Merke dir: …“.", source:"mem" };
+    const scheduled = (timerAdapter.getTimers() || []).filter(x => x.kind === "reminder").sort((a, b) => a.end - b.end);
+    const scheduledText = scheduled.length
+      ? "\n\n**Geplante Erinnerungen:**\n\n" + scheduled.map(x => { const d = new Date(x.end); return "- " + String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + d.getFullYear() + " um " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + " Uhr – " + String(x.label || "").replace(/^Erinnerung:\s*/, ""); }).join("\n")
+      : "";
+    return { text: (list.length ? "Das habe ich mir gemerkt:\n\n" + list.map(x => "- " + x).join("\n") : "Ich habe mir noch nichts gemerkt. Sag einfach „Merke dir: …“.") + scheduledText + (scheduled.length ? "" : "\n\n_Zeitgebundene Erinnerungen: „Erinnere mich morgen um 9 an den Zahnarzt“._"), source:"mem" };
   }
   if(/^vergiss\s+(?:alles|alle\s+erinnerungen)\s*[.!]?$/i.test(t))
     return { text: "Erledigt – ich habe alle Erinnerungen gelöscht.", source:"mem", effect: () => { cfg.memory = []; saveCfg(); } };

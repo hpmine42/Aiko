@@ -107,6 +107,7 @@ export function Header({
         <MenuItem icon="newchat" label="Neuer Chat" action={onNewChat} close={() => setChatOpen(false)} />
         <MenuItem icon="share" label="Teilen" action={onShare} close={() => setChatOpen(false)} />
         <MenuItem icon="share" label="Als Markdown exportieren" action={onExport} close={() => setChatOpen(false)} />
+        <MenuItem icon="copy" label="Drucken" action={() => window.print()} close={() => setChatOpen(false)} />
         <MenuItem icon="edit" label="Umbenennen" action={onRename} close={() => setChatOpen(false)} />
         <MenuItem icon="rules" label="Antworten festlegen" action={onOpenRules} close={() => setChatOpen(false)} />
         <MenuItem icon="trash" label="Löschen" action={onDelete} close={() => setChatOpen(false)} danger />

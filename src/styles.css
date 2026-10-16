@@ -63,6 +63,9 @@ body.busy .uacts .ux{display:none}
 .eb1{background:var(--accent)!important;color:#fff!important}
 
 .md{font-size:16px;line-height:1.65;overflow-wrap:anywhere}
+body.font-small .md,body.font-small .ubub{font-size:14px}
+body.font-large .md,body.font-large .ubub{font-size:18px}
+body.font-large .md table{font-size:16px}
 .md>:first-child{margin-top:0}
 .md>:last-child{margin-bottom:0}
 .md p{margin:0 0 14px}
@@ -212,7 +215,9 @@ body.emptychat .disc{display:none}
 button.item:active{background:var(--hover)}
 .item .v{margin-left:auto;color:var(--mute);font-size:15px;white-space:nowrap}
 .item .ch{color:var(--mute);width:16px;height:16px}
-.item input.txt{margin-left:auto;text-align:right;border:0;outline:0;background:none;font-size:16px;color:var(--dim);min-width:0;flex:1}
+.item input.txt,.item select.txt{margin-left:auto;text-align:right;border:0;outline:0;background:none;font-size:16px;color:var(--dim);min-width:0;flex:1}
+.item select.txt{appearance:auto;max-width:60%;direction:rtl}
+.item select.txt option{direction:ltr;color:#111;background:#fff}
 .item.danger{color:var(--danger)}
 .item .ico{color:var(--dim)}
 .sw{-webkit-appearance:none;appearance:none;width:48px;height:29px;border-radius:15px;background:rgba(120,120,128,.36);position:relative;margin:0 0 0 auto;flex:none;transition:background .2s;cursor:pointer;outline:0}
@@ -379,3 +384,23 @@ body.calm *{animation-duration:.01s!important;transition-duration:.01s!important
 .wqr>div:first-child>svg,.wch>div:first-child>svg{display:block;width:100%;height:auto}
 .editbox textarea{height:auto}
 button.scrim{border-radius:0}
+
+/* Kalender-Widget */
+.wcal{margin:10px 0 4px;display:inline-block;max-width:100%;border:1px solid var(--line);border-radius:16px;padding:10px 12px;background:var(--hover)}
+.wcal-h{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;opacity:.7;margin-bottom:6px}
+.wcal table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.wcal th{font-weight:600;opacity:.6;font-size:11px;padding:2px 0 6px;text-align:center}
+.wcal td{width:32px;height:30px;text-align:center;border-radius:8px}
+.wcal td.we{opacity:.55}
+.wcal td.hol{background:color-mix(in srgb,var(--accent) 22%,transparent);font-weight:600;opacity:1}
+.wcal td.today{outline:2px solid var(--accent2);outline-offset:-2px;font-weight:700;opacity:1}
+.wcal .wcal-kw{opacity:.45;font-size:11px;width:28px;border-right:1px solid var(--line);padding-right:4px}
+.wcal-f{margin-top:8px;font-size:12px;opacity:.75;max-width:280px}
+
+/* Druckansicht: nur der Verlauf, ohne Seitenleiste, Kopf- und Eingabezeile, Menüs und Timer. */
+@media print {
+  #side, #top, #bottom, #disc, .tdock, .toast, .pop, .dbox, .nav { display: none !important; }
+  body, #thread { background: #fff !important; color: #000 !important; }
+  #thread { overflow: visible !important; height: auto !important; }
+  .wpw, .wcal, .wcd { break-inside: avoid; }
+}

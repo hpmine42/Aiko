@@ -13,6 +13,11 @@ interface TimerDockProps {
 
 function formatClock(milliseconds: number): string {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1_000));
+  if (seconds >= 86_400) {
+    const days = Math.floor(seconds / 86_400);
+    const hours = Math.floor((seconds % 86_400) / 3_600);
+    return `${days} T ${hours} h`;
+  }
   const hours = Math.floor(seconds / 3_600);
   const minutes = Math.floor((seconds % 3_600) / 60);
   const remainder = seconds % 60;
@@ -66,6 +71,7 @@ export function TimerDock({ timers, onPause, onResume, onStop, onStopped }: Time
         return (
           <div className="tdock" data-id={timer.id} key={timer.id} onClick={expand} title={timer.label}>
             {timer.kind === 'pomodoro' && <span className="tdock-k" aria-hidden="true">{/pause/i.test(timer.label) ? '☕' : '🍅'}</span>}
+            {timer.kind === 'reminder' && <span className="tdock-k" aria-hidden="true">🔔</span>}
             <span className="tdock-t">{formatClock(left)}</span>
             <span className="tdock-bar"><i style={{ width: `${percent.toFixed(1)}%` }} /></span>
             <button
