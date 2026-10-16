@@ -10,7 +10,7 @@ import { iconHtml as ic } from '../components/Icon';
 import type { AikoConfig, ChatMessage, EngineResult, QrApi, Rule, RuleHit, RuleTestResult, TimerAdapter } from '../types';
 import { clone, variantsOf } from '../utils/config';
 import { isSafeRuleRegex, MAX_RULE_REGEX_INPUT_LENGTH } from '../utils/safeRegex';
-import { TOOL_HELP_LINES, feastDate, parseFeast, runTools } from './tools';
+import { TOOL_HELP_LINES, TOOL_SOURCE_LABELS, feastDate, parseFeast, runTools } from './tools';
 
 let cfg: AikoConfig = clone(DEFAULT_CONFIG);
 let onConfigChange: (config: AikoConfig) => void = () => {};
@@ -35,7 +35,7 @@ export function configureEngine(
 export function getEngineConfig(): AikoConfig { return cfg; }
 function saveCfg(): void { onConfigChange(clone(cfg)); }
 /* Typed offline tools (src/engine/tools): statistics, fractions, loans, holidays, moon phases … */
-function modernTools(t){ return runTools(t, { config: cfg, save: saveCfg, timers: timerAdapter }); }
+function modernTools(t){ return runTools(t, { config: cfg, save: saveCfg, timers: timerAdapter, labels: Object.assign({}, SOURCE_LABEL, TOOL_SOURCE_LABELS) }); }
 const rnd = a => a[Math.floor(Math.random() * a.length)];
 function withName(t: unknown): string {
   const n = (cfg && cfg.userName) || "";
@@ -547,9 +547,10 @@ const HELP = "Das kann ich – komplett offline. Befehle kannst du **mit oder oh
   "- **Passwörter:** „Sicheres Passwort“, „Passwort mit 24 Zeichen“, „6-stellige PIN“\n" +
   "- **Datum:** „Wie viele Tage bis Weihnachten?“, „Welcher Wochentag ist der 1.1.2030?“, „in 3 Wochen“\n" +
   "- **Alltag:** `1000 € mit 3 % Zinsen für 5 Jahre`, „3 Brötchen kosten 1,20 €, was kosten 7?“, `Fläche Kreis r = 3`\n" +
+  "- **Größen:** „Schuhgröße 42 in US“, „Kleidungsgröße 38 in US“, „Hosengröße 32/34“, „Kindergröße 104“, „Größentabelle Schuhe“\n" +
   "- **Text-Werkzeuge:** `Zähle Wörter: …`, `Sortiere: …`, `Entferne Duplikate: …`, `Formatiere JSON: …`\n" +
   "- **Wörterbuch:** „Was heißt Hund auf Englisch?“\n" +
-    "- **QR-Codes:** „QR-Code für https://example.com“ oder „QR WLAN: Name=…; Passwort=…“\n" +
+    "- **QR-Codes:** „QR-Code für https://example.com“, „QR WLAN: Name=…; Passwort=…“, „QR Kontakt: Name=…; Telefon=…“, „QR Geo: 50,73; 7,09“\n" +
   "- **Diagramme:** „Diagramm: Äpfel 5, Birnen 8, Kirschen 3“ – auch `Tortendiagramm`/`Liniendiagramm`, mit PNG-Download\n" +
   "- **Checklisten:** „Checkliste Einkauf: Milch, Brot“ – im Widget abhaken, ergänzen, exportieren\n" +
   "- **Merken:** „Merke dir: …“, „Was weißt du über mich?“, „Ich heiße …“\n" +
@@ -2026,10 +2027,43 @@ function qrTool(t){
     caption = "WLAN „" + ssid + "“";
   } else if(/\bwifi\s*:/.test(s) && (m = s.match(/(WIFI:[\s\S]+)$/i))){
     payload = m[1].trim(); caption = "WLAN-Zugang";
+  } else if((m = s.match(/^(?:(?:erstelle|erzeuge|mach|generiere|zeichne)(?:\s+mir)?(?:\s+bitte)?\s+)?(?:einen?\s+)?(?:qr[-\s]?code|qr)\s*(?:für|zu|von)?\s*(?:kontakt|visitenkarte|vcard)\s*[:,]?\s*([\s\S]+)$/i)) || (m = s.match(/^qr\s+kontakt\s*[:,]\s*([\s\S]+)$/i))){
+    /* vCard: „QR Kontakt: Name=…; Telefon=…; E-Mail=…; Firma=…; Web=…“ */
+    const parts = m[1].split(";").map(x => x.trim()).filter(Boolean).slice(0, 8);
+    const field = keys => { for(const p of parts){ const i = p.indexOf("="); if(i < 1) continue;
+      if(keys.indexOf(p.slice(0, i).trim().toLowerCase()) > -1) return p.slice(i + 1).trim(); } return null; };
+    const name = field(["name","nachname","vorname"]) || parts[0];
+    const tel = field(["telefon","tel","telefonnummer","mobil","handy","nummer"]);
+    const mail = field(["e-mail","email","mail"]);
+    const org = field(["firma","organisation","org","unternehmen"]);
+    const web = field(["web","website","url","homepage","link"]);
+    if(!name && !tel && !mail) return { text: "Für einen Kontakt-QR brauche ich mindestens einen Namen, eine Telefonnummer oder eine E-Mail – z. B. **„QR Kontakt: Name=Max Mustermann; Telefon=+49 228 123456; E-Mail=max@example.de“**.", source:"qr" };
+    let v = "BEGIN:VCARD\nVERSION:3.0\n";
+    if(name){ v += "N:" + name + "\nFN:" + name + "\n"; }
+    if(tel) v += "TEL:" + tel + "\n";
+    if(mail) v += "EMAIL:" + mail + "\n";
+    if(org) v += "ORG:" + org + "\n";
+    if(web) v += "URL:" + web + "\n";
+    payload = v + "END:VCARD";
+    caption = "Kontakt „" + name + "“";
+  } else if((m = s.match(/^(?:(?:erstelle|erzeuge|mach|generiere|zeichne)(?:\s+mir)?(?:\s+bitte)?\s+)?(?:einen?\s+)?(?:qr[-\s]?code|qr)\s*(?:für|zu|von)?\s*(?:telefon(?:nummer)?|tel|anruf)\s*[:,]?\s*([+\d][\d\s\-()/]{2,30})$/i))){
+    const nr = m[1].replace(/[\s\-()/]/g, "");
+    payload = "tel:" + nr; caption = "Telefon " + nr;
+  } else if((m = s.match(/^(?:(?:erstelle|erzeuge|mach|generiere|zeichne)(?:\s+mir)?(?:\s+bitte)?\s+)?(?:einen?\s+)?(?:qr[-\s]?code|qr)\s*(?:für|zu|von)?\s*(?:geo|gps|standort|koordinaten|position)\s*[:,]?\s*(\d{1,3}(?:[.,]\d+)?)\s*[,;]\s*(\d{1,3}(?:[.,]\d+)?)(?:\s*[,;]\s*(\d{1,5}(?:[.,]\d+)?)\s*m?)?$/i))){
+    const lat = m[1].replace(",", "."), lon = m[2].replace(",", "."), alt = m[3] ? m[3].replace(",", ".") : null;
+    payload = "geo:" + lat + "," + lon + (alt ? "," + alt : ""); caption = "Standort " + lat + ", " + lon;
+  } else if((m = s.match(/^(?:(?:erstelle|erzeuge|mach|generiere|zeichne)(?:\s+mir)?(?:\s+bitte)?\s+)?(?:einen?\s+)?(?:qr[-\s]?code|qr)\s*(?:für|zu)?\s*(?:url|link|webseite|website|internetadresse)\s*[:,]?\s*(\S.{0,300})$/i))){
+    const link = m[1].trim().replace(/^["„“']+|["“”']+$/g, "");
+    payload = /^https?:\/\//i.test(link) ? link : "https://" + link; caption = "Link";
   } else if((m = s.match(/^(?:(?:erstelle|erzeuge|mach|generiere|zeichne)(?:\s+mir)?(?:\s+bitte)?\s+)?(?:einen?\s+)?(?:qr[-\s]?code|qr)\s*(?:erstellen|generieren|zeichnen|machen)?\s*(?:für|von|mit|:)?\s*([\s\S]{1,800})\s*$/i))){
     payload = m[1].trim().replace(/^["„“']+|["“”']+$/g, "");
+    /* Nackte Domains wie „example.com“ als Link kodieren, damit Scanner sie öffnen */
+    if(!/\s/.test(payload) && /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/\S*)?$/i.test(payload) && !/^[a-z]+:/i.test(payload)){
+      payload = "https://" + payload;
+    }
+    if(/^https?:\/\//i.test(payload)) caption = "Link";
   }
-  if(!payload) return { text: "Ich erstelle dir **echte, scannbare QR-Codes** – komplett offline.\n\n- `QR-Code für https://example.com`\n- `QR-Code für Treffpunkt Marktplatz, 15 Uhr`\n- `QR WLAN: Name=MeinWLAN; Passwort=geheim123` (beim Scannen wird das WLAN verbunden)\n\nDas Bild kannst du speichern und teilen.", source:"qr" };
+  if(!payload) return { text: "Ich erstelle dir **echte, scannbare QR-Codes** – komplett offline.\n\n- `QR-Code für https://example.com`\n- `QR WLAN: Name=MeinWLAN; Passwort=geheim123` (beim Scannen wird das WLAN verbunden)\n- `QR Kontakt: Name=Max Mustermann; Telefon=+49 228 123456` (Visitenkarte)\n- `QR Telefon: +49 228 123456` · `QR Geo: 50,73; 7,09` (Standort) · `QR URL: example.com`\n\nDas Bild kannst du speichern und teilen.", source:"qr" };
   if(payload.length > 800) return { text: "Der Inhalt ist mit " + fmtN(payload.length) + " Zeichen zu lang für einen QR-Code (maximal 800). Kürze ihn bitte etwas.", source:"qr" };
   let q;
   try { q = Qr.encode(payload, "M"); } catch(e) { return { text: "Das konnte ich nicht in einen QR-Code verwandeln: " + e.message, source:"qr" }; }

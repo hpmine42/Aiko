@@ -484,3 +484,77 @@ describe('neue Werkzeuge', () => {
     expect(ask('Kennzeichen in Bayern').text).toContain('Kennzeichen in Bayern');
   });
 });
+
+describe('Größen, Laufen, Download, Statistik & neue QR-Codes', () => {
+  it('rechnet Download-Zeiten und Datenvolumen', () => {
+    const download = ask('Wie lange dauert 4,7 GB bei 50 Mbit/s?');
+    expect(download.source).toBe('download');
+    expect(download.text).toContain('12 min 32 s');
+    expect(download.text).toContain('37,6 Gbit');
+    expect(ask('Downloadzeit 25 GB bei 100 Mbit/s').val).toBe(2000);
+    expect(ask('Wie viel Datenvolumen bei 10 Mbit/s in 2 Stunden?').text).toContain('9 GB');
+    expect(ask('Download 5 GB in 20 Minuten').text).toContain('Mbit/s');
+  });
+
+  it('rechnet Schuh-, Kleidungs- und Hosengrößen um', () => {
+    expect(ask('Schuhgröße 42').text).toContain('US 9');
+    expect(ask('Schuhgröße 42').text).toContain('26,5 cm');
+    expect(ask('Schuhgröße 42 in US').text).toContain('US 9 (Herren)');
+    expect(ask('US 9 in EU-Schuhgröße').text).toContain('EU 42');
+    expect(ask('Damenschuhgröße 40').text).toContain('EU 40');
+    expect(ask('Kinderschuhgröße 30').text).toContain('US 12,5');
+    expect(ask('Kleidungsgröße 38 in US').text).toContain('US 8');
+    expect(ask('Konfektionsgröße Herren 52').text).toContain('US/UK 42');
+    expect(ask('Hosengröße 32/34').text).toContain('EU 48');
+    expect(ask('Hosengröße 32/34').text).toContain('81,3 cm');
+    expect(ask('Kindergröße 104').text).toContain('3–4 Jahre');
+    expect(ask('Größentabelle Schuhe').text).toContain('US Herren');
+    expect(ask('Größentabelle Kleidung').text).toContain('Konfektion');
+  });
+
+  it('plant Lauf-Prognosen, Splits und Pulszonen', () => {
+    const prognosis = ask('Prognose 10 km in 52:30');
+    expect(prognosis.source).toBe('running');
+    expect(prognosis.text).toContain('Riegel');
+    expect(prognosis.text).toContain('Halbmarathon');
+    expect(ask('Prognose 10 km in 52:30 für Marathon').text).toContain('Marathon');
+    expect(ask('Splits 10 km in 50:00').text).toContain('5:00 min/km');
+    expect(ask('Splits 10 km in 50:00').text).toContain('| 6 km');
+    const zones = ask('Pulszonen bei Ruhepuls 60 und Maximalpuls 185');
+    expect(zones.text).toContain('Karvonen');
+    expect(zones.text).toContain('148–160');
+    expect(ask('Trainingspuls 35 Jahre').text).toContain('220 − 35');
+  });
+
+  it('zeigt die Nutzungsstatistik als Diagramm', () => {
+    const empty = ask('Meine Statistik');
+    expect(empty.source).toBe('usage');
+    expect(empty.text).toContain('noch nichts');
+    ask('BMI bei 70 kg und 1,75 m');
+    ask('1/3 + 1/4');
+    const stats = ask('Meine Statistik');
+    expect(stats.text).toContain('aus Werkzeugen');
+    expect(stats.text).toContain('BMI');
+    expect(stats.widget?.type).toBe('chart');
+    expect((stats.widget as { svg?: string } | undefined)?.svg).toContain('<svg');
+  });
+
+  it('erstellt QR-Codes für Kontakte, Telefon, Standort und Links', () => {
+    const contact = ask('QR Kontakt: Name=Max Mustermann; Telefon=+49 228 123456; E-Mail=max@example.de');
+    expect(contact.source).toBe('qr');
+    expect((contact.widget as { text?: string } | undefined)?.text).toContain('BEGIN:VCARD');
+    expect((contact.widget as { text?: string } | undefined)?.text).toContain('TEL:+49 228 123456');
+    expect((contact.widget as { text?: string } | undefined)?.text).toContain('END:VCARD');
+    expect((ask('QR Telefon: +49 228 123 456').widget as { text?: string } | undefined)?.text).toBe('tel:+49228123456');
+    expect((ask('QR Geo: 50,73; 7,09').widget as { text?: string } | undefined)?.text).toBe('geo:50.73,7.09');
+    expect((ask('QR URL: example.com').widget as { text?: string } | undefined)?.text).toBe('https://example.com');
+  });
+
+  it('erkennt die neuen Werkzeuge in /hilfe und im Slash-Menü', () => {
+    expect(ask('/hilfe').text).toContain('Download & Volumen');
+    expect(ask('/hilfe').text).toContain('Lauf & Puls');
+    expect(ask('/hilfe').text).toContain('Statistik-Dashboard');
+    expect(CMD_LIST.map(([command]) => command.toLowerCase())).toContain('/meine statistik');
+    expect(CMD_LIST.map(([command]) => command.toLowerCase())).toContain('/schuhgröße 42 in us');
+  });
+});

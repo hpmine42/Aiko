@@ -34,6 +34,10 @@ import { gameTool } from './games';
 import { calendarTool } from './calendar';
 import { plateTool } from './plates';
 import { reminderTool } from './reminders';
+import { downloadTool } from './download';
+import { sizesTool } from './sizes';
+import { runningTool } from './running';
+import { usageTool } from './usage';
 
 export type { Tool, ToolContext, ToolResult } from './types';
 export { parseFeast, feastDate } from './holidays';
@@ -73,6 +77,10 @@ export const TOOLS: readonly Tool[] = [
   countryTool,
   elementTool,
   plateTool,
+  sizesTool,
+  runningTool,
+  downloadTool,
+  usageTool,
   dataTool,
   generatorTool,
   regexTool,
@@ -92,11 +100,13 @@ export interface RunOptions {
   save: () => void;
   timers: TimerAdapter;
   now?: () => Date;
+  /** Source-id → label map (e.g. legacy SOURCE_LABEL) for tools like the statistics dashboard. */
+  labels?: Record<string, string>;
 }
 
 /** Runs the typed tools in order and returns the first result. */
 export function runTools(text: string, options: RunOptions): ToolResult | null {
-  const context: ToolContext = { config: options.config, save: options.save, timers: options.timers, now: options.now || (() => new Date()) };
+  const context: ToolContext = { config: options.config, save: options.save, timers: options.timers, now: options.now || (() => new Date()), labels: options.labels || {} };
   for (const tool of TOOLS) {
     let result: ToolResult | null = null;
     try {

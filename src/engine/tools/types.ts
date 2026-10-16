@@ -18,6 +18,8 @@ export interface ToolContext {
   timers: TimerAdapter;
   /** Injectable clock so date-based tools stay testable. */
   now: () => Date;
+  /** Source-id → human label (legacy + typed tools), e.g. for the statistics dashboard. */
+  labels: Record<string, string>;
 }
 
 export interface Tool {

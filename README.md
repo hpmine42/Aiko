@@ -62,7 +62,7 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Datum & Uhrzeit:** Wochentag, Kalenderwochen, Zeiträume, Alter und nächster Geburtstag, Countdowns, Zeitunterschiede und Uhrzeit-Umrechnung
 - **Finanzen & Alltag:** Zinseszins, Netto/Brutto, Preisvergleich, Dreisatz, Geometrie
 - **Timer & Wecker:** echter Countdown mit Dock zum Pausieren, Fortsetzen und Abbrechen
-- **QR-Codes:** eigener Encoder, offline erzeugt und scannbar – auch WLAN-QR-Codes
+- **QR-Codes:** eigener Encoder, offline erzeugt und scannbar – WLAN-, Kontakt- (vCard), Telefon- und Standort-QR-Codes
 - **Diagramme & Listen:** Säulen-, Torten- und Liniendiagramme, interaktive Checklisten
 - **Zufall & Sicherheit:** Passwörter, PINs, Würfeln, Münzwurf, Zufallszahl, Entscheidungshilfe
 - **Text-Werkzeuge:** sortieren, mischen, Duplikate entfernen, Groß-/Kleinschreibung, umkehren, JSON formatieren und prüfen, Wörter zählen
@@ -76,6 +76,9 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Stoppuhr & Pomodoro:** Stoppuhr mit Runden als Widget im Chat, Pomodoro-Zyklen, die Phase für Phase automatisch weiterlaufen
 - **Kalender & Arbeitszeit:** Monatskalender mit Feiertagen und KW, Jahresübersicht, Arbeitstage/Werktage zählen und Enddaten berechnen, Feiertage pro Bundesland (Standard aus den Einstellungen)
 - **Zeit & Schlaf:** Uhrzeit- und Dauerrechnung (Pausen, Stunden in h:mm), Schlafzyklen-Rechner, Sonnenauf- und -untergang nach Ort, Sternzeichen und chinesisches Tierkreiszeichen
+- **Größen:** Schuh- und Kleidungsgrößen EU ⇄ US ⇄ UK (Damen, Herren, Kinder), Hosengrößen (W/L in Zoll), Kindergrößen nach Körpergröße, komplette Größentabellen
+- **Lauf & Puls:** Wettkampf-Prognosen nach Riegel, gleichmäßige Splits mit Zwischenzeiten, Trainingspuls-Zonen nach Karvonen
+- **Download & Datenvolumen:** Download-Zeit aus Bandbreite („4,7 GB bei 50 Mbit/s“), Volumen aus Dauer, nötige Bandbreite – komplett offline gerechnet
 - **Küche & Auto:** Küchenmaße (Tasse, EL, TL, Cups) mit Dichte für Mehl, Zucker und Co., Rezepte skalieren, Backofen-Umrechnung, Spritverbrauch, Spritkosten, Pace, Anhalteweg, Fahrzeit
 - **Schule & Finanzen:** Noten aus Punkten (IHK und Oberstufe), Notendurchschnitt, Sparpläne, Entnahmepläne, Kaufkraft bei Inflation, Verdopplungszeit
 - **Länder, Elemente & Kennzeichen:** Hauptstadt, Vorwahl, Währung, Landesinfos; Periodensystem, Molmasse; Kfz-Unterscheidungszeichen in beide Richtungen
@@ -84,7 +87,8 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Spiele:** Zahlenraten, Schere-Stein-Papier, Kopfrechnen, Galgenmännchen, Quiz – „Spiel beenden“ zeigt den Stand
 - **Erinnerungen:** Erinnerungen als Timer („Erinnere mich morgen um 9 an den Zahnarzt“). Sie feuern nur, solange Aiko im Browser geöffnet ist.
 - **Druckansicht:** Chat über das Menü drucken (ohne Seitenleiste und Eingabe)
-- **Mehr Befehle** – 56 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
+- **Statistik-Dashboard:** „Meine Statistik“ zeigt als Diagramm, welche Werkzeuge und Regeln wie oft geantwortet haben
+- **Mehr Befehle** – 61 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
 
 ### Verwaltung & Datenschutz im Alltag
 
@@ -238,7 +242,7 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Rule triggers: plain phrases (typo tolerant), `=exact`, `~/regex/flags`, `{placeholder}` capture, `&` (AND), exclusions, priorities, enabled flag
 - Multiple reply variants (`|||`), suggestion buttons, follow-ups for shorter/simpler/why/example/more/again, rule editor, validated rule-code import, rule tests and usage stats, JSON import/export
 - Working offline tools: calculator with equations up to degree 2 (including working steps), unit and fixed-rate currency conversion, dates, calendar weeks, time zones, ages and countdowns, compound interest, net/gross, price comparison, rule of three, geometry
-- Timers with a pause/resume dock, offline QR codes (including Wi-Fi), bar/pie/line charts, interactive checklists
+- Timers with a pause/resume dock, offline QR codes (Wi-Fi, vCard contacts, phone numbers, geo locations), bar/pie/line charts, interactive checklists, and a usage-statistics dashboard chart (“Meine Statistik”)
 - Passwords, PINs, dice, coin flips, random numbers and pickers, text tools (sort, shuffle, deduplicate, case, reverse, JSON, word count), number bases, primes, colour conversion
 - German↔English dictionary plus your own, memory notes, personal knowledge base with sources
 - Statistics (mean, median, mode, standard deviation), exact fraction arithmetic with working steps, annuity loans with repayment schedule, tip and bill splitting, BMI and calorie needs
@@ -248,10 +252,11 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Calendar with holidays and calendar weeks, working-day and workweek counts (per German state from your settings), sleep-cycle and time/duration maths, sunrise and sunset by place, zodiac signs and the Chinese zodiac
 - Kitchen measures (cup, tablespoon, teaspoon, density for flour and sugar), recipe scaling, oven conversion, fuel consumption and cost, running pace, braking distance, school grades (IHK and upper-school points), savings and withdrawal plans, purchasing power under inflation
 - Country facts, periodic table and molar masses, German licence plate codes in both directions, Caesar/ROT13/Vigenère/Atbash/A1Z26 ciphers, DIN 5009 and NATO spelling, CSV and Markdown tables, password strength, WCAG contrast checks, number theory (gcd/lcm, divisors, Fibonacci, binomial coefficients, Collatz)
+- Clothing and shoe sizes EU/US/UK (women, men, kids), trouser W/L inches, kids sizes by height, race prognoses (Riegel), even splits and Karvonen heart-rate zones, download time and data volume (“4,7 GB bei 50 Mbit/s”)
 - Mini games: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz
 - Reminders as timers (“Erinnere mich morgen um 9 an den Zahnarzt”) – they only fire while Aiko is open in the browser
 - Print view of the chat from the menu (without sidebar and composer)
-- 56 slash commands and short forms across 15 topics – type `/hilfe` in the chat
+- 61 slash commands and short forms across 15 topics – type `/hilfe` in the chat
 - Light/dark/system theme, avatar handling, chat pinning and renaming, Markdown chat export, full JSON backup; existing `nova.*` data from the original single-file app stays compatible
 
 ## Quick start
