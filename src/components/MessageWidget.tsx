@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import type { AikoConfig, Checklist, MessageWidget as MessageWidgetType, StopwatchState } from '../types';
 import { Qr, norm } from '../engine/aikoEngine';
 import { buildMonth, formatStopwatch, stopwatchElapsed } from '../engine/tools';
@@ -46,32 +46,40 @@ const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli
 
 function CalendarWidgetView({ year, month, state }: { year: number; month: number; state: string | null }) {
   const cal = useMemo(() => buildMonth(year, month, state), [year, month, state]);
-  const holidays = cal.weeks.flatMap((week) => week.days).filter((day): day is NonNullable<typeof day> => Boolean(day && day.holiday));
+  const cells = cal.weeks.flatMap((week) => week.days).filter((day): day is NonNullable<typeof day> => Boolean(day));
+  const holidays = cells.filter((day) => day.holiday);
+  const workdays = cells.filter((day) => !day.weekend && !day.holiday).length;
+  const monthName = MONTH_NAMES[month - 1];
+  const dayClass = (day: NonNullable<typeof cells[number]>) => ['wcal-c', day.weekend ? 'we' : '', day.holiday ? 'hol' : '', day.today ? 'today' : ''].filter(Boolean).join(' ');
   return (
-    <div className="wcal" role="table" aria-label={`Kalender ${MONTH_NAMES[month - 1]} ${year}`}>
-      <div className="wcal-h">{MONTH_NAMES[month - 1]} {year}</div>
-      <table>
-        <thead>
-          <tr><th className="wcal-kw" title="Kalenderwoche">KW</th>{['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((name) => <th key={name}>{name}</th>)}</tr>
-        </thead>
-        <tbody>
-          {cal.weeks.map((week) => (
-            <tr key={week.kw}>
-              <td className="wcal-kw">{week.kw}</td>
-              {week.days.map((day, index) => (
-                <td
+    <div className="wcal" role="group" aria-label={`Kalender ${monthName} ${year}`}>
+      <div className="wcal-h">
+        <span>{monthName} {year}</span>
+        <span className="wcal-sub">{workdays} Arbeitstage</span>
+      </div>
+      <div className="wcal-g">
+        <span className="wcal-kwh" title="Kalenderwoche">KW</span>
+        {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((name) => <span className="wcal-dh" key={name}>{name}</span>)}
+        {cal.weeks.map((week, weekIndex) => (
+          <Fragment key={`${week.kw}-${weekIndex}`}>
+            <span className="wcal-kw">{week.kw}</span>
+            {week.days.map((day, index) => (
+              day ? (
+                <span
                   key={index}
-                  className={day ? [day.weekend ? 'we' : '', day.holiday ? 'hol' : '', day.today ? 'today' : ''].filter(Boolean).join(' ') : 'empty'}
-                  title={day?.holiday || undefined}
-                  aria-label={day ? `${day.day}. ${MONTH_NAMES[month - 1]}${day.holiday ? `, ${day.holiday}` : ''}${day.today ? ', heute' : ''}` : undefined}
+                  className={dayClass(day)}
+                  title={day.holiday || undefined}
+                  aria-label={`${day.day}. ${monthName}${day.holiday ? `, ${day.holiday}` : ''}${day.today ? ', heute' : ''}`}
                 >
-                  {day ? day.day : ''}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {day.day}
+                </span>
+              ) : (
+                <span key={index} className="wcal-c empty" aria-hidden="true" />
+              )
+            ))}
+          </Fragment>
+        ))}
+      </div>
       {holidays.length > 0 && (
         <div className="wcal-f">{holidays.map((day) => `${day.day}. ${day.holiday}`).join(' · ')}</div>
       )}
