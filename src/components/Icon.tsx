@@ -33,7 +33,8 @@ export const ICON_PATHS = {
   file:'<path d="M14 3.5H7.5A2.5 2.5 0 0 0 5 6v12a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 18V8.5z"/><path d="M14 3.5v5h5"/>',
   code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
   pin:'<path d="M9 4h6l-1 6 3.5 3.5v1.5H6.5v-1.5L10 10z"/><path d="M12 15v5"/>',
-  rules:'<path d="M4 6h10M4 12h7M4 18h5"/><path d="M14.5 19.5 20 14l-2-2-5.5 5.5-.5 2.5z"/>'
+  rules:'<path d="M4 6h10M4 12h7M4 18h5"/><path d="M14.5 19.5 20 14l-2-2-5.5 5.5-.5 2.5z"/>',
+  star:'<path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/>'
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

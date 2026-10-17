@@ -17,6 +17,8 @@ import { buildMonth, isoWeek } from '../engine/tools/calendar';
 import { addWorkdays, countWorkdays } from '../engine/tools/workdays';
 import { parseClock, parseDuration } from '../engine/tools/timecalc';
 import { activeGame, resetGames } from '../engine/tools/games';
+import { quotesTool, SPRUECHE, WITZE, ZITATE } from '../engine/tools/quotes';
+import { todayTool } from '../engine/tools/today';
 import { tttBestMove, tttMove, tttWinner } from '../engine/tools/tictactoe';
 import { c4BestMove, c4Drop, c4Winner } from '../engine/tools/connect4';
 import { sudokuGenerate, sudokuHint, sudokuParse, sudokuSolve } from '../engine/tools/sudoku';
@@ -57,6 +59,13 @@ beforeEach(() => {
 });
 
 const ask = (text: string) => pickResponse(text, null, null);
+const toolContext = (now: Date, cfg: AikoConfig = config) => ({
+  config: cfg,
+  save: () => {},
+  timers: { getTimers: () => [], start: () => {}, stopAll: () => 0 },
+  now: () => now,
+  labels: {},
+});
 
 describe('tool registry', () => {
   it('registers every tool with a label and a help line', () => {
@@ -696,5 +705,94 @@ describe('Brettspiele: Tic-Tac-Toe, 4 Gewinnt, Sudoku', () => {
     expect(activeGame()).toBeNull();
     expect(ask('Sudoku Lösung: ' + '0'.repeat(81)).text).toContain('nicht eindeutig');
     expect(ask('Spiel beenden').text.toLowerCase()).toContain('kein spiel');
+  });
+});
+
+describe('Heute-Übersicht', () => {
+  it('zeigt Datum, KW, Mondphase und den nächsten Feiertag', () => {
+    const result = ask('Heute');
+    expect(result.source).toBe('today');
+    expect(result.text).toContain('Kalenderwoche');
+    expect(result.text).toMatch(/beleuchtet/);
+    expect(result.text).toContain('Feiertag');
+    expect(ask('Tagesübersicht').source).toBe('today');
+    expect(ask('Was ist heute?').source).toBe('today');
+    expect(ask('Übersicht').source).toBe('today');
+  });
+
+  it('rechnet mit eingespritztem Datum und Bundesland', () => {
+    const now = new Date(2026, 9, 16);
+    const card = todayTool.run('Heute', toolContext(now))!.text;
+    expect(card).toContain('Freitag, 16. Oktober 2026');
+    expect(card).toContain('Kalenderwoche 42');
+    expect(card).toContain('bundesweit');
+    expect(card).toContain('1. Weihnachtstag');
+    expect(card).toContain('in 70 Tagen');
+    const nw = clone(config);
+    nw.region = 'NW';
+    const cardNw = todayTool.run('Heute', toolContext(now, nw))!.text;
+    expect(cardNw).toContain('Nordrhein-Westfalen');
+    expect(cardNw).toContain('Allerheiligen');
+  });
+
+  it('listet Countdowns und laufende Timer auf', () => {
+    const now = new Date(2026, 9, 16, 12, 0, 0);
+    const cfg = clone(config);
+    cfg.countdowns = [{ name: 'Weihnachten', ts: Date.UTC(2026, 11, 24) }];
+    const ctx = {
+      config: cfg,
+      save: () => {},
+      timers: {
+        getTimers: () => [{ id: 't1', end: now.getTime() + 300_000, dur: 300, label: 'Tee', paused: false }],
+        start: () => {},
+        stopAll: () => 0,
+      },
+      now: () => now,
+      labels: {},
+    };
+    const card = todayTool.run('Heute', ctx)!.text;
+    expect(card).toContain('Countdowns: **Weihnachten** in 69 Tagen');
+    expect(card).toContain('Timer: **Tee** – noch 5 min');
+  });
+});
+
+describe('Sprüche, Witze & Zitate', () => {
+  it('rotiert den Spruch des Tages deterministisch pro Tag', () => {
+    const day1 = quotesTool.run('Spruch des Tages', toolContext(new Date(2026, 9, 16)));
+    const day1Again = quotesTool.run('Spruch des Tages', toolContext(new Date(2026, 9, 16, 23, 59)));
+    const day2 = quotesTool.run('Spruch des Tages', toolContext(new Date(2026, 9, 17)));
+    expect(day1!.text).toBe(day1Again!.text);
+    expect(day1!.text).toContain('Spruch des Tages');
+    expect(day1!.text).not.toBe(day2!.text);
+  });
+
+  it('unterscheidet Tages-Tipp und Zufallsauswahl', () => {
+    const daily = quotesTool.run('Zitat des Tages', toolContext(new Date(2026, 9, 16)))!;
+    expect(daily.text).toContain('Zitat des Tages');
+    expect(daily.text).toContain('—');
+    const random = quotesTool.run('Zitat', toolContext(new Date(2026, 9, 16)))!;
+    expect(random.text).not.toContain('Zitat des Tages');
+    expect(random.text).toContain('—');
+    expect(quotesTool.run('Flachwitz', toolContext(new Date(2026, 9, 16)))!.text.length).toBeGreaterThan(10);
+  });
+
+  it('antwortet aus der Sammlung und lässt die Witz-Regel unberührt', () => {
+    expect(ask('Spruch des Tages').source).toBe('quotes');
+    expect(ask('Zitat').source).toBe('quotes');
+    expect(ask('Witz des Tages').source).toBe('quotes');
+    expect(ask('Witz').source).toBe('rule');
+    expect(ask('Erzähl mir einen Witz').source).toBe('rule');
+  });
+});
+
+describe('Sprüche-Sammlungen', () => {
+  it('ist groß genug für tägliche Rotation und enthält keine Duplikate', () => {
+    expect(SPRUECHE.length).toBeGreaterThanOrEqual(48);
+    expect(WITZE.length).toBeGreaterThanOrEqual(36);
+    expect(ZITATE.length).toBeGreaterThanOrEqual(24);
+    expect(new Set(SPRUECHE).size).toBe(SPRUECHE.length);
+    expect(new Set(WITZE).size).toBe(WITZE.length);
+    expect(new Set(ZITATE.map(([text]) => text)).size).toBe(ZITATE.length);
+    expect(WITZE.join(' ').toLowerCase()).not.toContain('magnet');
   });
 });

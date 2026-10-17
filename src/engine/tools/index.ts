@@ -38,6 +38,8 @@ import { downloadTool } from './download';
 import { sizesTool } from './sizes';
 import { runningTool } from './running';
 import { usageTool } from './usage';
+import { quotesTool } from './quotes';
+import { todayTool } from './today';
 
 export type { Tool, ToolContext, ToolResult } from './types';
 export { parseFeast, feastDate } from './holidays';
@@ -81,6 +83,8 @@ export const TOOLS: readonly Tool[] = [
   runningTool,
   downloadTool,
   usageTool,
+  todayTool,
+  quotesTool,
   dataTool,
   generatorTool,
   regexTool,

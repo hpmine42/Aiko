@@ -169,6 +169,8 @@ export interface AssistantMessage {
   role: 'assistant';
   variants: string[];
   vi: number;
+  /** Antwort wurde vom Nutzer als Favorit markiert. */
+  fav?: boolean;
   ts: number;
   meta: MessageMeta[];
   thoughts?: number[];

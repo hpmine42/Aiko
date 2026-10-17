@@ -217,6 +217,7 @@ export function normalizeChat(input: unknown, config: AikoConfig): Chat | null {
         meta: Array.isArray(message.meta) ? message.meta.map(normalizeMeta) : [],
         thoughts: Array.isArray(message.thoughts) ? message.thoughts.filter((value) => typeof value === 'number' && Number.isFinite(value)) : [],
         fb: message.fb === 'up' || message.fb === 'down' ? message.fb : null,
+        ...(message.fav === true ? { fav: true } : {}),
       };
     });
   const model = config.models.some((entry) => entry.id === raw.model) ? String(raw.model) : config.defaultModel;

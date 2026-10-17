@@ -3,6 +3,7 @@ import { AttachmentSheet } from './components/AttachmentSheet';
 import { Chat } from './components/Chat';
 import { Composer } from './components/Composer';
 import { Dialog } from './components/Dialog';
+import { Favorites } from './components/Favorites';
 import { Header } from './components/Header';
 import { MessageList, type MessageListHandle } from './components/MessageList';
 import { Settings } from './components/Settings';
@@ -24,6 +25,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsRulesOpen, setSettingsRulesOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showToBottom, setShowToBottom] = useState(false);
   const messageList = useRef<MessageListHandle>(null);
@@ -182,6 +184,7 @@ export default function App() {
             if (title?.trim()) aiko.renameChat(aiko.current, title.trim());
           }}
           onOpenRules={() => openSettings(true)}
+          onOpenFavorites={() => setFavoritesOpen(true)}
           onDelete={() => aiko.deleteChat(aiko.current)}
           toast={toastState.show}
         />
@@ -197,6 +200,7 @@ export default function App() {
           onRegenerate={aiko.regenerate}
           onVariant={aiko.setVariant}
           onFeedback={aiko.setFeedback}
+          onToggleFav={aiko.toggleFav}
           onSuggestion={aiko.send}
           toast={toastState.show}
           onBottomVisibility={setShowToBottom}
@@ -241,6 +245,22 @@ export default function App() {
         onRename={aiko.renameChat}
         onExport={(chat) => { exportChatMarkdown(chat, aiko.config.assistantName); toastState.show('Chat exportiert'); }}
         onDelete={aiko.deleteChat}
+      />
+
+      <Favorites
+        open={favoritesOpen}
+        chats={aiko.chats}
+        onClose={() => setFavoritesOpen(false)}
+        onOpenChat={(id) => {
+          const chat = aiko.chats.find((entry) => entry.id === id);
+          if (chat) aiko.selectChat(chat);
+          setFavoritesOpen(false);
+          setSidebarOpen(false);
+        }}
+        onRemove={(chatId, index) => {
+          const chat = aiko.chats.find((entry) => entry.id === chatId);
+          if (chat) aiko.setFav(chat, index, false);
+        }}
       />
 
       <AttachmentSheet open={attachmentOpen} onClose={() => setAttachmentOpen(false)} onFiles={addFiles} />
