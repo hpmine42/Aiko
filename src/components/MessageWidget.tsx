@@ -9,9 +9,11 @@ interface MessageWidgetProps {
   config: AikoConfig;
   onConfig: (config: AikoConfig) => void;
   toast: (message: string) => void;
+  /** Sendet eine Chat-Nachricht (z. B. Spielzüge aus Brettklicks). */
+  onSend?: (text: string) => void;
 }
 
-export function MessageWidget({ widget, config, onConfig, toast }: MessageWidgetProps) {
+export function MessageWidget({ widget, config, onConfig, toast, onSend }: MessageWidgetProps) {
   if (!widget) return null;
   if (widget.type === 'color') {
     return (
@@ -39,7 +41,56 @@ export function MessageWidget({ widget, config, onConfig, toast }: MessageWidget
   }
   if (widget.type === 'stopwatch') return <StopwatchWidget config={config} onConfig={onConfig} toast={toast} />;
   if (widget.type === 'calendar') return <CalendarWidgetView year={widget.year} month={widget.month} state={widget.state} />;
+  if (widget.type === 'ttt') return <TttBoardWidget board={widget.board} over={widget.over === true} send={onSend} />;
+  if (widget.type === 'c4') return <C4BoardWidget board={widget.board} over={widget.over === true} send={onSend} />;
   return null;
+}
+
+function TttBoardWidget({ board, over, send }: { board: string; over: boolean; send?: (text: string) => void }) {
+  return (
+    <div className="wttt" role="group" aria-label="Tic-Tac-Toe-Brett">
+      {board.split('').map((cell, i) => {
+        if (cell === ' ') {
+          const disabled = over || !send;
+          return (
+            <button
+              key={i}
+              type="button"
+              className="wttt-c empty"
+              disabled={disabled}
+              aria-label={`Feld ${i + 1} belegen`}
+              onClick={() => send?.(`Tic Tac Toe: ${i + 1}`)}
+            >{i + 1}</button>
+          );
+        }
+        return <span key={i} className={`wttt-c ${cell === 'X' ? 'x' : 'o'}`}>{cell}</span>;
+      })}
+    </div>
+  );
+}
+
+function C4BoardWidget({ board, over, send }: { board: string; over: boolean; send?: (text: string) => void }) {
+  const playable = (col: number): boolean => !over && Boolean(send) && board[col] === ' ';
+  return (
+    <div className="wc4" role="group" aria-label="Vier-gewinnt-Brett">
+      <div className="wc4-drop">
+        {[0, 1, 2, 3, 4, 5, 6].map((col) => (
+          <button
+            key={col}
+            type="button"
+            disabled={!playable(col)}
+            aria-label={`In Spalte ${col + 1} werfen`}
+            onClick={() => send?.(`4 Gewinnt: Spalte ${col + 1}`)}
+          >▼</button>
+        ))}
+      </div>
+      <div className="wc4-grid">
+        {board.split('').map((cell, i) => (
+          <span key={i} className={`wc4-c ${cell === 'X' ? 'x' : cell === 'O' ? 'o' : ''}`}>{cell === ' ' ? '' : cell}</span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];

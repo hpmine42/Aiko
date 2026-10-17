@@ -17,6 +17,9 @@ import { buildMonth, isoWeek } from '../engine/tools/calendar';
 import { addWorkdays, countWorkdays } from '../engine/tools/workdays';
 import { parseClock, parseDuration } from '../engine/tools/timecalc';
 import { activeGame, resetGames } from '../engine/tools/games';
+import { tttBestMove, tttMove, tttWinner } from '../engine/tools/tictactoe';
+import { c4BestMove, c4Drop, c4Winner } from '../engine/tools/connect4';
+import { sudokuGenerate, sudokuHint, sudokuParse, sudokuSolve } from '../engine/tools/sudoku';
 import { REMINDER_KIND } from '../engine/tools/reminders';
 import { chineseZodiac } from '../engine/tools/zodiac';
 import { caesar, crackCaesar, vigenere, atbash } from '../engine/tools/cipher';
@@ -556,5 +559,142 @@ describe('Größen, Laufen, Download, Statistik & neue QR-Codes', () => {
     expect(ask('/hilfe').text).toContain('Statistik-Dashboard');
     expect(CMD_LIST.map(([command]) => command.toLowerCase())).toContain('/meine statistik');
     expect(CMD_LIST.map(([command]) => command.toLowerCase())).toContain('/schuhgröße 42 in us');
+  });
+});
+
+describe('Brettspiele: Tic-Tac-Toe, 4 Gewinnt, Sudoku', () => {
+  const WIDGET = (r: { widget?: unknown }): Record<string, unknown> => r.widget as Record<string, unknown>;
+
+  it('startet Tic-Tac-Toe mit klickbarem Brett und spielt Züge', () => {
+    const r = ask('Tic Tac Toe');
+    expect(r.source).toBe('games');
+    expect(WIDGET(r)).toMatchObject({ type: 'ttt', board: '         ', over: false });
+    expect(r.text).toContain('Tic-Tac-Toe');
+    const move = ask('5');
+    expect(WIDGET(move)).toMatchObject({ type: 'ttt' });
+    expect(String(WIDGET(move).board)).toMatch(/X/);
+    expect(String(WIDGET(move).board)).toMatch(/O/);
+    expect(activeGame()).toBe('ttt');
+    const occupied = ask('5');
+    expect(occupied.text).toContain('besetzt');
+    const restart = ask('Tic Tac Toe leicht');
+    expect(WIDGET(restart)).toMatchObject({ type: 'ttt', board: '         ' });
+    expect(restart.text).toContain('leicht');
+  });
+
+  it('nimmt den ersten Zug direkt beim Start an', () => {
+    resetGames();
+    const r = ask('Tic Tac Toe: 5');
+    expect(WIDGET(r)).toMatchObject({ type: 'ttt' });
+    expect(String(WIDGET(r).board)[4]).toBe('X');
+    expect(String(WIDGET(r).board)).toContain('O');
+  });
+
+  it('ist im schwer-Modus ungeschlagen (perfektes Minimax)', () => {
+    const place = (board: string, i: number, p: string) => board.slice(0, i) + p + board.slice(i + 1);
+    for (let first = 0; first < 9; first++) {
+      let board = place('         ', first, 'X');
+      for (let guard = 0; guard < 12; guard++) {
+        let w = tttWinner(board);
+        if (w) { expect(w).not.toBe('X'); break; } // Aiko (O) verliert nie
+        board = place(board, tttBestMove(board, 'O'), 'O');
+        w = tttWinner(board);
+        if (w) break;
+        board = place(board, tttBestMove(board, 'X'), 'X');
+      }
+      expect(tttWinner(board)).not.toBe('X');
+    }
+  });
+
+  it('spielt leicht mit Zufallszügen', () => {
+    let calls = 0;
+    const move = tttMove('X        ', 'O', 1, () => { calls++; return 0; });
+    expect(calls).toBe(1);
+    expect(move).toBeGreaterThanOrEqual(0);
+  });
+
+  it('erkennt 4-gewinnt-Reihen in alle Richtungen', () => {
+    let board = ' '.repeat(42);
+    for (const col of [0, 1, 2, 3]) board = c4Drop(board, col, 'X')!.board;
+    expect(c4Winner(board)).toBe('X');
+    board = ' '.repeat(42);
+    for (let i = 0; i < 4; i++) board = c4Drop(board, 6, 'O')!.board;
+    expect(c4Winner(board)).toBe('O');
+    // Diagonal (unten links nach oben rechts)
+    const cells = [[5, 0], [4, 1], [3, 2], [2, 3]];
+    let diag = ' '.repeat(42);
+    for (const [row, col] of cells) {
+      const i = row * 7 + col;
+      diag = diag.slice(0, i) + 'X' + diag.slice(i + 1);
+    }
+    expect(c4Winner(diag)).toBe('X');
+    expect(c4Winner(' '.repeat(42))).toBeNull();
+  });
+
+  it('blockt gegnerische Drohungen und nutzt eigene Gewinnzüge', () => {
+    let board = ' '.repeat(42);
+    for (let i = 0; i < 3; i++) board = c4Drop(board, 2, 'X')!.board;
+    expect(c4BestMove(board, 'O', 4)).toBe(2);   // senkrechte Drohung blocken
+    let mine = ' '.repeat(42);
+    for (let i = 0; i < 3; i++) mine = c4Drop(mine, 5, 'O')!.board;
+    expect(c4BestMove(mine, 'O', 4)).toBe(5);    // eigener Gewinnzug
+  });
+
+  it('startet 4 Gewinnt über die Engine und wirft Spalten', () => {
+    resetGames();
+    const r = ask('4 Gewinnt');
+    expect(WIDGET(r)).toMatchObject({ type: 'c4', board: ' '.repeat(42), over: false });
+    expect(r.text).toContain('4 Gewinnt');
+    const move = ask('Spalte 4');
+    expect(String(WIDGET(move).board)).toMatch(/X/);
+    expect(String(WIDGET(move).board)).toMatch(/O/);
+    expect(activeGame()).toBe('c4');
+    ask('Spiel beenden');
+    const fresh = ask('4 Gewinnt: 7');  // nach Ende: Neustart mit erstem Zug
+    expect(String(WIDGET(fresh).board).split('X').length - 1).toBe(1); // genau ein X
+  });
+
+  it('löst ein bekanntes Sudoku und prüft Eindeutigkeit', () => {
+    const KNOWN = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+    const grid = sudokuParse(KNOWN)!;
+    expect(grid).toHaveLength(81);
+    const solved = sudokuSolve(grid, 2);
+    expect(solved.count).toBe(1);
+    expect(solved.solutions[0].slice(0, 9).join('')).toBe('534678912');
+    expect(sudokuSolve(new Array(81).fill(0), 2).count).toBe(2); // leeres Brett: mehrdeutig
+    const broken = sudokuParse(KNOWN.replace(/^5/, '3'))!;       // zweite 3 in Zeile 1
+    expect(sudokuSolve(broken, 1).count).toBe(0);
+    const hint = sudokuHint(grid)!;
+    expect(grid[(hint.row - 1) * 9 + hint.col - 1]).toBe(0);
+    expect(hint.value).toBe(solved.solutions[0][(hint.row - 1) * 9 + hint.col - 1]);
+    expect(hint.reason).toMatch(/Single/);
+  });
+
+  it('generiert eindeutig lösbare Rätsel in drei Schwierigkeiten', () => {
+    for (const level of ['leicht', 'mittel', 'schwer'] as const) {
+      const { puzzle, solution } = sudokuGenerate(level);
+      expect(sudokuSolve(puzzle, 2).count).toBe(1);
+      expect(sudokuSolve(puzzle, 1).solutions[0]).toEqual(solution);
+      expect(puzzle.filter(Boolean).length).toBeGreaterThanOrEqual(22);
+      expect(puzzle.filter(Boolean).length).toBeLessThanOrEqual(45);
+    }
+  });
+
+  it('spielt Sudoku im Chat: eigenes Rätsel, Vorgaben, Konflikte, Lösung', () => {
+    resetGames();
+    const KNOWN = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+    const start = ask(`Sudoku: ${KNOWN}`);
+    expect(start.text).toContain('eigenes Rätsel');
+    expect(activeGame()).toBe('sudoku');
+    expect(ask('Z1S1=9').text).toContain('Vorgabe');
+    expect(ask('Z1S3=3').text).toContain('passt nicht');
+    expect(ask('Z1S3=4').text).toContain('eingetragen');
+    const tip = ask('Tipp');
+    expect(tip.text).toContain('Tipp');
+    const solution = ask('Sudoku Lösung');
+    expect(solution.text).toContain('Lösung');
+    expect(activeGame()).toBeNull();
+    expect(ask('Sudoku Lösung: ' + '0'.repeat(81)).text).toContain('nicht eindeutig');
+    expect(ask('Spiel beenden').text.toLowerCase()).toContain('kein spiel');
   });
 });

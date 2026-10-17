@@ -156,6 +156,10 @@ function normalizeWidget(input: unknown): MessageWidget | null {
     return { type: 'stopwatch' };
   if (widget.type === 'calendar' && typeof widget.year === 'number' && typeof widget.month === 'number' && Number.isInteger(widget.year) && Number.isInteger(widget.month) && widget.month >= 1 && widget.month <= 12)
     return { type: 'calendar', year: widget.year, month: widget.month, state: typeof widget.state === 'string' && /^[A-Z]{2}$/.test(widget.state) ? widget.state : null };
+  if (widget.type === 'ttt' && typeof widget.board === 'string' && /^[XO ]{9}$/.test(widget.board))
+    return { type: 'ttt', board: widget.board, over: widget.over === true };
+  if (widget.type === 'c4' && typeof widget.board === 'string' && /^[XO ]{42}$/.test(widget.board))
+    return { type: 'c4', board: widget.board, over: widget.over === true };
   return null;
 }
 

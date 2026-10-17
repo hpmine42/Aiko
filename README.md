@@ -84,11 +84,11 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Länder, Elemente & Kennzeichen:** Hauptstadt, Vorwahl, Währung, Landesinfos; Periodensystem, Molmasse; Kfz-Unterscheidungszeichen in beide Richtungen
 - **Codes & Daten:** Caesar, ROT13, Vigenère, Atbash, A1Z26, Caesar-Knacken, Buchstabieren nach DIN 5009 und NATO; CSV, Markdown-Tabellen, JSON; Häufigkeiten, Passwortstärke, WCAG-Kontrast, Farbpalette
 - **Zahlentheorie:** ggT und kgV, Teiler, Fibonacci, Binomialkoeffizient („49 über 6“), Collatz, Quersumme, Teilbarkeit
-- **Spiele:** Zahlenraten, Schere-Stein-Papier, Kopfrechnen, Galgenmännchen, Quiz – „Spiel beenden“ zeigt den Stand
+- **Spiele:** Zahlenraten, Schere-Stein-Papier, Kopfrechnen, Galgenmännchen, Quiz, Tic-Tac-Toe (klickbares Brett, perfekt in „schwer“), 4 Gewinnt (Alpha-Beta-KI, drei Stärken), Sudoku (Generator mit drei Schwierigkeiten und garantiert eindeutiger Lösung, Löser für fremde Rätsel, Tipps mit Begründung) – „Spiel beenden“ zeigt den Stand
 - **Erinnerungen:** Erinnerungen als Timer („Erinnere mich morgen um 9 an den Zahnarzt“). Sie feuern nur, solange Aiko im Browser geöffnet ist.
 - **Druckansicht:** Chat über das Menü drucken (ohne Seitenleiste und Eingabe)
 - **Statistik-Dashboard:** „Meine Statistik“ zeigt als Diagramm, welche Werkzeuge und Regeln wie oft geantwortet haben
-- **Mehr Befehle** – 61 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
+- **Mehr Befehle** – 64 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
 
 ### Verwaltung & Datenschutz im Alltag
 
@@ -253,10 +253,10 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Kitchen measures (cup, tablespoon, teaspoon, density for flour and sugar), recipe scaling, oven conversion, fuel consumption and cost, running pace, braking distance, school grades (IHK and upper-school points), savings and withdrawal plans, purchasing power under inflation
 - Country facts, periodic table and molar masses, German licence plate codes in both directions, Caesar/ROT13/Vigenère/Atbash/A1Z26 ciphers, DIN 5009 and NATO spelling, CSV and Markdown tables, password strength, WCAG contrast checks, number theory (gcd/lcm, divisors, Fibonacci, binomial coefficients, Collatz)
 - Clothing and shoe sizes EU/US/UK (women, men, kids), trouser W/L inches, kids sizes by height, race prognoses (Riegel), even splits and Karvonen heart-rate zones, download time and data volume (“4,7 GB bei 50 Mbit/s”)
-- Mini games: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz
+- Mini games: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz, plus board games with clickable widgets – Tic-Tac-Toe (unbeatable on “schwer”), Connect Four (alpha-beta AI, three levels) and Sudoku (generator with three difficulties and a guaranteed unique solution, solver for external puzzles, hints with explanations)
 - Reminders as timers (“Erinnere mich morgen um 9 an den Zahnarzt”) – they only fire while Aiko is open in the browser
 - Print view of the chat from the menu (without sidebar and composer)
-- 61 slash commands and short forms across 15 topics – type `/hilfe` in the chat
+- 64 slash commands and short forms across 15 topics – type `/hilfe` in the chat
 - Light/dark/system theme, avatar handling, chat pinning and renaming, Markdown chat export, full JSON backup; existing `nova.*` data from the original single-file app stays compatible
 
 ## Quick start

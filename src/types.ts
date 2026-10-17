@@ -117,6 +117,22 @@ export interface StopwatchWidget {
   type: 'stopwatch';
 }
 
+export interface TttWidget {
+  type: 'ttt';
+  /** 9 Zeichen: 'X' (Mensch), 'O' (Aiko), ' ' (leer) – Index 0 oben links. */
+  board: string;
+  /** Spiel vorbei → Brettklicks deaktiviert. */
+  over?: boolean;
+}
+
+export interface C4Widget {
+  type: 'c4';
+  /** 42 Zeichen (6 Reihen × 7 Spalten), Zeile 0 oben: 'X', 'O' oder ' '. */
+  board: string;
+  /** Spiel vorbei → Spaltenklicks deaktiviert. */
+  over?: boolean;
+}
+
 export interface CalendarWidget {
   type: 'calendar';
   year: number;
@@ -125,7 +141,7 @@ export interface CalendarWidget {
   state: string | null;
 }
 
-export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget | StopwatchWidget | CalendarWidget;
+export type MessageWidget = ColorWidget | QrWidget | PasswordWidget | ChartWidget | ListWidget | StopwatchWidget | CalendarWidget | TttWidget | C4Widget;
 
 export interface MessageMeta {
   rule: string | null;
