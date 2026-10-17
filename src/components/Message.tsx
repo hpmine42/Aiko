@@ -154,7 +154,7 @@ function AssistantMessageView({
       {thought ? <div className="thought">Nachgedacht für {thought} s</div> : null}
       <div className="md" onClick={onMarkdownClick} dangerouslySetInnerHTML={{ __html: md(rendered) }} />
       {generating && <span className="cur" />}
-      {!generating && <MessageWidget widget={meta.widget} config={config} onConfig={onConfig} toast={toast} />}
+      {!generating && <MessageWidget widget={meta.widget} config={config} onConfig={onConfig} toast={toast} onSend={onSuggestion} />}
       {suggestions.length > 0 && (
         <div className="sugg">{suggestions.map((suggestion) => (
           <button type="button" key={suggestion} onClick={() => onSuggestion(suggestion)}>{suggestion}</button>

@@ -1,5 +1,8 @@
 import type { Tool, ToolResult } from './types';
 import { clean, fmtN, pick, randomInt } from './shared';
+import { tttMove, tttRender, tttWinner } from './tictactoe';
+import { c4BestMove, c4Drop, c4Render, c4Winner } from './connect4';
+import { sudokuGenerate, sudokuHint, sudokuParse, sudokuRender, sudokuSolve, type SudokuGrid } from './sudoku';
 
 /* Small chat games with in-memory state: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz. */
 
@@ -7,12 +10,22 @@ type Game =
   | { kind: 'guess'; target: number; max: number; tries: number }
   | { kind: 'math'; question: string; answer: number; score: number; total: number }
   | { kind: 'hangman'; word: string; hint: string; guessed: Set<string>; wrong: number }
-  | { kind: 'quiz'; index: number; score: number; asked: number[] };
+  | { kind: 'quiz'; index: number; score: number; asked: number[] }
+  | { kind: 'ttt'; board: string; diff: number }
+  | { kind: 'c4'; board: string; diff: number }
+  | { kind: 'sudoku'; puzzle: SudokuGrid; solution: SudokuGrid; current: SudokuGrid; errors: number; hints: number; level: string };
 
 let game: Game | null = null;
 const rpsScore = { me: 0, you: 0, draw: 0 };
+const tttScore = { me: 0, you: 0, draw: 0 };
+const c4Score = { me: 0, you: 0, draw: 0 };
 
-export function resetGames(): void { game = null; rpsScore.me = 0; rpsScore.you = 0; rpsScore.draw = 0; }
+export function resetGames(): void {
+  game = null;
+  rpsScore.me = 0; rpsScore.you = 0; rpsScore.draw = 0;
+  tttScore.me = 0; tttScore.you = 0; tttScore.draw = 0;
+  c4Score.me = 0; c4Score.you = 0; c4Score.draw = 0;
+}
 export const activeGame = (): string | null => game?.kind ?? null;
 
 const HANGMAN: Array<[string, string]> = [
@@ -72,23 +85,34 @@ function mathQuestion(level: number): { question: string; answer: number } {
   return { question: `${a} + ${b}`, answer: a + b };
 }
 
-const start = (text: string): ToolResult => ({ text, source: 'games' });
+const start = (text: string, widget?: ToolResult['widget']): ToolResult => ({ text, source: 'games', widget: widget ?? null });
 
 export const gameTool: Tool = {
   id: 'games',
   label: 'Spiele',
-  help: '- **Spiele:** „Zahlenraten“, „Schere Stein Papier: Stein“, „Kopfrechnen“, „Galgenmännchen“, „Quiz“ – mit „Spiel beenden“ aufhören',
+  help: '- **Spiele:** „Zahlenraten“, „Schere Stein Papier: Stein“, „Kopfrechnen“, „Galgenmännchen“, „Quiz“, „Tic Tac Toe“, „4 Gewinnt“, „Sudoku (leicht/mittel/schwer)“ – mit „Spiel beenden“ aufhören',
   run(input) {
     const s = clean(input);
     const lower = s.toLowerCase();
 
     if (/^(?:spiel\s+(?:beenden|abbrechen|stoppen|aufgeben)|aufgeben|ich\s+gebe\s+auf|beende\s+das\s+spiel|stopp\s+spiel|lösung\s+bitte)$/i.test(lower)) {
-      if (!game) return rpsScore.me + rpsScore.you + rpsScore.draw ? start(`Kein Spiel aktiv. Schere-Stein-Papier-Stand: du ${rpsScore.you} – ich ${rpsScore.me} (${rpsScore.draw} unentschieden).`) : start('Gerade läuft kein Spiel. Starte eins mit „Zahlenraten“, „Kopfrechnen“, „Galgenmännchen“ oder „Quiz“.');
+      if (!game) {
+        const scores = [];
+        if (rpsScore.me + rpsScore.you + rpsScore.draw) scores.push(`Schere-Stein-Papier: du ${rpsScore.you} – ich ${rpsScore.me} (${rpsScore.draw} unentschieden)`);
+        if (tttScore.me + tttScore.you + tttScore.draw) scores.push(`Tic-Tac-Toe: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden)`);
+        if (c4Score.me + c4Score.you + c4Score.draw) scores.push(`4 Gewinnt: du ${c4Score.you} – ich ${c4Score.me} (${c4Score.draw} unentschieden)`);
+        return start(scores.length ? `Kein Spiel aktiv. Stände: ${scores.join(' · ')}.` : 'Gerade läuft kein Spiel. Starte eins mit „Zahlenraten“, „Kopfrechnen“, „Galgenmännchen“, „Quiz“, „Tic Tac Toe“, „4 Gewinnt“ oder „Sudoku“.');
+      }
       const g = game;
       game = null;
       if (g.kind === 'guess') return start(`Aufgegeben – die Zahl war **${g.target}**. Neue Runde mit „Zahlenraten“.`);
       if (g.kind === 'math') return start(`Kopfrechnen beendet: **${g.score} von ${g.total} richtig**${g.total ? ` (${fmtN(g.score / g.total * 100, 0)} %)` : ''}.`);
       if (g.kind === 'hangman') return start(`Das Wort war **${g.word}**. Neue Runde mit „Galgenmännchen“.`);
+      if (g.kind === 'ttt') return start(`Tic-Tac-Toe beendet. Stand: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden).`);
+      if (g.kind === 'c4') return start(`4 Gewinnt beendet. Stand: du ${c4Score.you} – ich ${c4Score.me} (${c4Score.draw} unentschieden).`);
+      if (g.kind === 'sudoku') return start(`Sudoku beendet – hier ist die Lösung:
+
+${sudokuRender(g.solution)}`);
       return start(`Quiz beendet: **${g.score} von ${g.asked.length} richtig**.`);
     }
 
@@ -192,6 +216,200 @@ export const gameTool: Tool = {
       g.index = next;
       g.asked.push(next);
       return start(`${feedback}\n\nStand: ${g.score}/${g.asked.length - 1}\n\n❓ **${QUIZ[next].q}**`);
+    }
+
+    // --- Tic-Tac-Toe ---
+    const tttName = /(?:tic\s*tac\s*toe|drei\s*gewinnt|dreigewinnt|ttt)\b/i;
+    const tttDiffOf = (text: string): number => (/schwer/.test(text) ? 3 : /mittel/.test(text) ? 2 : /leicht|einfach/.test(text) ? 1 : 0);
+    const tttTail = (text: string): string => text.replace(tttName, ' ');
+    if (game?.kind === 'ttt') {
+      const g = game;
+      const tail = tttTail(lower);
+      const mm = tail.match(/^[^0-9]*([1-9])\s*$/);
+      const restart = tttDiffOf(tail);
+      if (mm && !restart) {
+        const cell = Number(mm[1]) - 1;
+        if (g.board[cell] !== ' ') return start(`Feld ${mm[1]} ist schon besetzt – wähle ein freies Feld (1–9).\n\n${tttRender(g.board)}`, { type: 'ttt', board: g.board, over: false });
+        let board = g.board.slice(0, cell) + 'X' + g.board.slice(cell + 1);
+        let w = tttWinner(board);
+        if (w === 'X') { game = null; tttScore.you++; return start(`🎉 **Du gewinnst!** Drei in Reihe.\n\n${tttRender(board)}\n\nStand: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden). Nochmal? „Tic Tac Toe“.`, { type: 'ttt', board, over: true }); }
+        if (w === 'D') { game = null; tttScore.draw++; return start(`🤝 **Unentschieden!**\n\n${tttRender(board)}\n\nStand: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden).`, { type: 'ttt', board, over: true }); }
+        const mine = tttMove(board, 'O', g.diff);
+        if (mine >= 0) board = board.slice(0, mine) + 'O' + board.slice(mine + 1);
+        w = tttWinner(board);
+        if (w === 'O') { game = null; tttScore.me++; return start(`😅 **Ich gewinne** – meine drei sind komplett.\n\n${tttRender(board)}\n\nStand: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden). Revanche? „Tic Tac Toe“.`, { type: 'ttt', board, over: true }); }
+        if (w === 'D') { game = null; tttScore.draw++; return start(`🤝 **Unentschieden!**\n\n${tttRender(board)}\n\nStand: du ${tttScore.you} – ich ${tttScore.me} (${tttScore.draw} unentschieden).`, { type: 'ttt', board, over: true }); }
+        game = { kind: 'ttt', board, diff: g.diff };
+        return start(`Du: **X** auf Feld ${cell + 1} · Ich: **O** auf Feld ${mine + 1}. Du bist am Zug!\n\n${tttRender(board)}`, { type: 'ttt', board, over: false });
+      }
+      if (!mm && !restart) {
+        return start(`Du bist **X** und am Zug – klick ein Feld oder schreibe die Nummer (1–9).\n\n${tttRender(g.board)}`, { type: 'ttt', board: g.board, over: false });
+      }
+    }
+    if (tttName.test(lower) && (game?.kind !== 'ttt' || tttDiffOf(tttTail(lower)))) {
+      const diff = tttDiffOf(lower) || 3;
+      let board = '         ';
+      const first = tttTail(lower).match(/\b([1-9])\b/);
+      if (first) {
+        const cell = Number(first[1]) - 1;
+        board = board.slice(0, cell) + 'X' + board.slice(cell + 1);
+        const mine = tttMove(board, 'O', diff);
+        if (mine >= 0) board = board.slice(0, mine) + 'O' + board.slice(mine + 1);
+        game = { kind: 'ttt', board, diff };
+        return start(`⭕ **Tic-Tac-Toe** (${diff === 3 ? 'schwer – ungeschlagen' : diff === 2 ? 'mittel' : 'leicht'}). Du: **X** auf ${cell + 1} · Ich: **O** auf ${mine + 1}.\n\n${tttRender(board)}\n\nDu bist am Zug – Feldnummer (1–9) schreiben oder klicken.`, { type: 'ttt', board, over: false });
+      }
+      game = { kind: 'ttt', board, diff };
+      return start(`⭕ **Tic-Tac-Toe** (${diff === 3 ? 'schwer – ungeschlagen' : diff === 2 ? 'mittel' : 'leicht'}). Du bist **X** und beginnst – klick ein Feld im Brett oder schreibe die Feldnummer (1–9). „Spiel beenden“ beendet.\n\n${tttRender(board)}`, { type: 'ttt', board, over: false });
+    }
+
+    // --- 4 Gewinnt ---
+    const c4Name = /(?:4\s*gewinnt|vier\s*gewinnt|viergewinnt|connect\s*four)\b/i;
+    const c4DiffOf = (text: string): number => (/schwer/.test(text) ? 3 : /mittel/.test(text) ? 2 : /leicht|einfach/.test(text) ? 1 : 0);
+    const c4Tail = (text: string): string => text.replace(c4Name, ' ');
+    const c4Depth = (diff: number): number => (diff >= 3 ? 6 : diff === 2 ? 4 : 1);
+    if (game?.kind === 'c4') {
+      const g = game;
+      const tail = c4Tail(lower);
+      const mm = tail.match(/^[^0-9]*([1-7])\s*$/);
+      const restart = c4DiffOf(tail);
+      if (mm && !restart) {
+        const col = Number(mm[1]) - 1;
+        const drop = c4Drop(g.board, col, 'X');
+        if (!drop) return start(`Spalte ${col + 1} ist voll – wähle eine andere (1–7).\n\n${c4Render(g.board)}`, { type: 'c4', board: g.board, over: false });
+        let board = drop.board;
+        let w = c4Winner(board);
+        if (w === 'X') { game = null; c4Score.you++; return start(`🎉 **Du gewinnst!** Vier in Reihe.\n\n${c4Render(board)}\n\nStand: du ${c4Score.you} – ich ${c4Score.me} (${c4Score.draw} unentschieden). Revanche? „4 Gewinnt“.`, { type: 'c4', board, over: true }); }
+        if (w === 'D') { game = null; c4Score.draw++; return start(`🤝 **Unentschieden** – das Brett ist voll.\n\n${c4Render(board)}`, { type: 'c4', board, over: true }); }
+        const myCol = c4BestMove(board, 'O', c4Depth(g.diff));
+        const myDrop = myCol >= 0 ? c4Drop(board, myCol, 'O') : null;
+        if (myDrop) board = myDrop.board;
+        w = c4Winner(board);
+        if (w === 'O') { game = null; c4Score.me++; return start(`🔴 **Ich gewinne** – meine vier sind komplett.\n\n${c4Render(board)}\n\nStand: du ${c4Score.you} – ich ${c4Score.me} (${c4Score.draw} unentschieden). Revanche? „4 Gewinnt“.`, { type: 'c4', board, over: true }); }
+        if (w === 'D') { game = null; c4Score.draw++; return start(`🤝 **Unentschieden** – das Brett ist voll.\n\n${c4Render(board)}`, { type: 'c4', board, over: true }); }
+        game = { kind: 'c4', board, diff: g.diff };
+        return start(`Du wirfst **X** in Spalte ${col + 1} · Ich antworte mit **O** in Spalte ${myCol + 1}.\n\n${c4Render(board)}\n\nDu bist am Zug – Spalte (1–7) schreiben oder klicken.`, { type: 'c4', board, over: false });
+      }
+      if (!mm && !restart) {
+        return start(`Du bist **X** und am Zug – Spalte (1–7) schreiben oder oben klicken.\n\n${c4Render(g.board)}`, { type: 'c4', board: g.board, over: false });
+      }
+    }
+    if (c4Name.test(lower) && (game?.kind !== 'c4' || c4DiffOf(c4Tail(lower)))) {
+      const diff = c4DiffOf(lower) || 3;
+      const first = c4Tail(lower).match(/\b([1-7])\b/);
+      let board = ' '.repeat(42);
+      if (first) {
+        const col = Number(first[1]) - 1;
+        const drop = c4Drop(board, col, 'X');
+        if (drop) {
+          board = drop.board;
+          const myCol = c4BestMove(board, 'O', c4Depth(diff));
+          const myDrop = myCol >= 0 ? c4Drop(board, myCol, 'O') : null;
+          if (myDrop) board = myDrop.board;
+          game = { kind: 'c4', board, diff };
+          return start(`🔴 **4 Gewinnt** (${diff === 3 ? 'schwer' : diff === 2 ? 'mittel' : 'leicht'}). Du: **X** in Spalte ${col + 1} · Ich: **O** in Spalte ${myCol + 1}.\n\n${c4Render(board)}\n\nDu bist am Zug – Spalte (1–7) schreiben oder klicken.`, { type: 'c4', board, over: false });
+        }
+      }
+      game = { kind: 'c4', board, diff };
+      return start(`🔴 **4 Gewinnt** (${diff === 3 ? 'schwer' : diff === 2 ? 'mittel' : 'leicht'}) – du bist **X** und wirfst zuerst. Spalte (1–7) schreiben oder oben klicken; „Spiel beenden“ beendet.\n\n${c4Render(board)}`, { type: 'c4', board, over: false });
+    }
+
+    // --- Sudoku ---
+    let sm: RegExpMatchArray | null;
+    if ((sm = lower.match(/^sudoku\s+l(?:ö|oe)sung(?:\s+bitte)?\s*[:：]?\s*([\s\S]+)$/)) || (sm = lower.match(/^l(?:ö|oe)se\s+sudoku\s*[:：]?\s*([\s\S]+)$/))) {
+      const grid = sudokuParse(sm[1]);
+      if (!grid) return start('Für den Löser brauche ich **81 Ziffern** (0, . oder – für leere Felder), z. B.:\n\n`Sudoku Lösung: 530070000600195000098000060800060003400803001700020006060000280000419005000080079`');
+      const { solutions, count } = sudokuSolve(grid, 2);
+      if (!count) return start('Dieses Sudoku hat **keine Lösung** – irgendwo widersprechen sich Zahlen. Prüfe Zeilen, Spalten und Blöcke.');
+      const note = count > 1 ? '_Achtung: dieses Rätsel ist nicht eindeutig – hier ist **eine** mögliche Lösung._' : '_Eindeutig lösbar._';
+      return start(`**Lösung:**\n\n${sudokuRender(solutions[0])}\n\n${note}`);
+    }
+    if (game?.kind === 'sudoku') {
+      const g = game;
+      if (/^(?:sudoku\s+)?l(?:ö|oe)sung(?:\s+bitte)?$/.test(lower)) {
+        game = null;
+        return start(`Hier ist die Lösung:\n\n${sudokuRender(g.solution)}\n\n_Du hattest ${g.errors} Fehlversuche und ${g.hints} Tipps._ Noch eins? „Sudoku“, „Sudoku mittel“ oder „Sudoku schwer“.`);
+      }
+      if (/^(?:sudoku\s+)?(?:tipp|hinweis)(?:\s+bitte)?$/.test(lower)) {
+        g.hints += 1;
+        const hint = sudokuHint(g.current);
+        if (hint) {
+          g.current[(hint.row - 1) * 9 + hint.col - 1] = hint.value;
+          if (!g.current.includes(0)) {
+            const done = g.current.every((v, i) => v === g.solution[i]);
+            game = null;
+            return start(done ? `💡 ${hint.reason}\n\n🎉 **Damit ist das Sudoku komplett – alles korrekt!** (${g.errors} Fehlversuche, ${g.hints} Tipps)\n\n${sudokuRender(g.current)}` : `💡 ${hint.reason}\n\n${sudokuRender(g.current)}`);
+          }
+          return start(`💡 **Tipp:** ${hint.reason}\n\nIch habe die Ziffer schon eingetragen:\n\n${sudokuRender(g.current)}`);
+        }
+        const idx = g.current.findIndex((v, i) => !v && !g.puzzle[i]);
+        const firstEmpty = idx >= 0 ? idx : g.current.findIndex((v) => !v);
+        if (firstEmpty < 0) return start(`Alles ausgefüllt – prüfe mit „Sudoku Lösung“ oder korrigiere mit „Z<r>S<c>=0“.`);
+        const row = Math.floor(firstEmpty / 9) + 1;
+        const col = (firstEmpty % 9) + 1;
+        g.current[firstEmpty] = g.solution[firstEmpty];
+        return start(`💡 Mit einfacher Logik (Single) geht es gerade nicht weiter – ich decke auf: **Zeile ${row}, Spalte ${col} = ${g.solution[firstEmpty]}**.\n\n${sudokuRender(g.current)}\n\n_Für die harten Stellen braucht es Paare, X-Wing & Co. – oder weitere Tipps._`);
+      }
+      if (/^sudoku(?:\s+(?:leicht|einfach|mittel|schwer))?(?:\s+(?:spielen|starten|neu|neues))?$/.test(lower)) {
+        if (/(?:leicht|einfach|mittel|schwer)|neu/.test(lower)) { /* Neustart unten weiter */ }
+        else return start(`Dein Sudoku (${g.level}) läuft noch:\n\n${sudokuRender(g.current)}\n\n- Ziffer setzen: **„Z3S5=7“** oder „Zeile 3 Spalte 5: 7“ · löschen: „Z3S5=0“\n- **„Tipp“** für die nächste logische Stelle · **„Sudoku Lösung“** löst auf`);
+      }
+      if ((sm = lower.match(/^zeile\s*(\d)\s*[,;:\s]\s*spalte\s*(\d)\s*(?:=|:|ist|\s)?\s*(\d)$/)) || (sm = lower.match(/^z\s?(\d)\s*[,;:\s]?\s*s\s?(\d)\s*(?:=|:)?\s*(\d)$/)) || (sm = lower.match(/^(\d)\s*[,;:\s]\s*(\d)\s*[,;:\s]\s*(\d)$/))) {
+        const row = Number(sm[1]);
+        const col = Number(sm[2]);
+        const value = Number(sm[3]);
+        if (row < 1 || row > 9 || col < 1 || col > 9 || value > 9) return null;
+        const i = (row - 1) * 9 + col - 1;
+        if (g.puzzle[i]) return start(`Zeile ${row}, Spalte ${col} ist eine **Vorgabe** (${g.puzzle[i]}) – die bleibt fest.`);
+        if (value === 0) {
+          g.current[i] = 0;
+          return start(`Zeile ${row}, Spalte ${col} geleert.\n\n${sudokuRender(g.current)}`);
+        }
+        const conflict = ((): string | null => {
+          for (let c = 0; c < 9; c++) if (c !== col - 1 && g.current[(row - 1) * 9 + c] === value) return `Zeile ${row}`;
+          for (let r = 0; r < 9; r++) if (r !== row - 1 && g.current[r * 9 + col - 1] === value) return `Spalte ${col}`;
+          const br = Math.floor((row - 1) / 3) * 3 + 1;
+          const bc = Math.floor((col - 1) / 3) * 3 + 1;
+          for (let r = br; r < br + 3; r++) for (let c = bc; c < bc + 3; c++) {
+            if (r === row && c === col) continue;
+            if (g.current[(r - 1) * 9 + c - 1] === value) return `Block ${Math.floor((row - 1) / 3) * 3 + Math.floor((col - 1) / 3) + 1}`;
+          }
+          return null;
+        })();
+        if (conflict) {
+          g.errors += 1;
+          return start(`❌ Die **${value}** passt nicht in Zeile ${row}, Spalte ${col} – sie steht schon in ${conflict}.\n\n${sudokuRender(g.current)}`);
+        }
+        g.current[i] = value;
+        if (!g.current.includes(0)) {
+          if (g.current.every((v, k) => v === g.solution[k])) {
+            game = null;
+            return start(`🎉 **Fertig – alles korrekt!** Sudoku ${g.level} gelöst mit ${g.errors} Fehlversuchen und ${g.hints} Tipps.\n\n${sudokuRender(g.current)}\n\nNoch eins? „Sudoku schwer“.`);
+          }
+          const wrong = g.current.filter((v, k) => v !== g.solution[k]).length;
+          return start(`🔍 Das Brett ist voll, aber **${wrong} Zelle${wrong === 1 ? ' ist' : 'n sind'}** noch falsch. Mit „Z<r>S<c>=0“ leeren oder „Tipp“ nehmen.\n\n${sudokuRender(g.current)}`);
+        }
+        return start(`✅ **${value}** eingetragen in Zeile ${row}, Spalte ${col}.\n\n${sudokuRender(g.current)}`);
+      }
+    }
+    if (/^sudoku\b/i.test(lower)) {
+      // Eigenes Rätsel: „Sudoku: 81 Ziffern“ (0/. für leer)
+      const blob = lower.replace(/^sudoku\b/i, ' ').replace(/[^0-9.\-\*_]/g, '');
+      if (/^\d{81}$/.test(blob.replace(/[.\-*_]/g, '0')) || /^[0.\-*_]{81}$/.test(blob)) {
+        const custom = sudokuParse(blob);
+        if (custom) {
+          const solved = sudokuSolve(custom, 2);
+          if (!solved.count) return start('Dieses Sudoku ist **nicht lösbar** – irgendwo widersprechen sich Zahlen. Prüfe Zeilen, Spalten und Blöcke.');
+          if (solved.count > 1) return start('Dieses Sudoku ist **nicht eindeutig** lösbar – bitte gib ein Rätsel mit genau einer Lösung an (oder nutze „Sudoku leicht“ für ein generiertes).');
+          game = { kind: 'sudoku', puzzle: custom, solution: solved.solutions[0], current: custom.slice(), errors: 0, hints: 0, level: 'eigenes' };
+          const givens = custom.filter(Boolean).length;
+          return start(`🔢 **Sudoku (eigenes Rätsel)** – ${givens} Vorgaben, eindeutig lösbar.\n\n${sudokuRender(custom)}\n\n- Ziffer setzen: **„Z3S5=7“**, „Zeile 3 Spalte 5: 7“ oder kurz „3 5 7“ · löschen: „Z3S5=0“\n- **„Tipp“** zeigt die nächste logische Stelle (mit Begründung)\n- **„Sudoku Lösung“** löst auf, „Spiel beenden“ beendet`);
+        }
+      }
+      const level = /schwer/.test(lower) ? 'schwer' : /mittel/.test(lower) ? 'mittel' : /leicht|einfach/.test(lower) ? 'leicht' : 'mittel';
+      const { puzzle, solution } = sudokuGenerate(level);
+      game = { kind: 'sudoku', puzzle, solution, current: puzzle.slice(), errors: 0, hints: 0, level };
+      const givens = puzzle.filter(Boolean).length;
+      return start(`🔢 **Sudoku ${level}** – ${givens} Vorgaben, eindeutig lösbar.\n\n${sudokuRender(puzzle)}\n\n- Ziffer setzen: **„Z3S5=7“**, „Zeile 3 Spalte 5: 7“ oder kurz „3 5 7“ · löschen: „Z3S5=0“\n- **„Tipp“** zeigt die nächste logische Stelle (mit Begründung)\n- **„Sudoku Lösung“** löst auf, „Spiel beenden“ beendet`);
     }
     return null;
   },

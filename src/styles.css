@@ -407,3 +407,20 @@ button.scrim{border-radius:0}
   #thread { overflow: visible !important; height: auto !important; }
   .wpw, .wcal, .wcd { break-inside: avoid; }
 }
+
+/* Spielbrett-Widgets: Tic-Tac-Toe & 4 Gewinnt */
+.wttt{margin:10px 0 4px;width:min(100%,230px);border-radius:16px;padding:10px;border:1px solid var(--line);background:var(--hover);display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wttt-c{aspect-ratio:1;display:grid;place-items:center;border-radius:12px;font-size:26px;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line);background:var(--bg);color:var(--mute);user-select:none}
+button.wttt-c{cursor:pointer}
+button.wttt-c.empty{color:var(--mute);opacity:.45}
+button.wttt-c.empty:hover{opacity:1;color:var(--accent2);border-color:var(--accent2)}
+.wttt-c.x{color:var(--accent2);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg))}
+.wttt-c.o{color:#e0604d;border-color:#b64a3a;background:color-mix(in srgb,#e0604d 14%,var(--bg))}
+.wc4{margin:10px 0 4px;width:min(100%,300px);border-radius:16px;padding:10px;border:1px solid var(--line);background:var(--hover)}
+.wc4-drop{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.wc4-drop button{border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:12px;line-height:1;padding:7px 0;cursor:pointer}
+.wc4-drop button:disabled{opacity:.25;cursor:default}
+.wc4-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:#173f7d;border-radius:12px;padding:5px}
+.wc4-c{aspect-ratio:1;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+.wc4-c.x{background:#2c67c5}
+.wc4-c.o{background:#e0604d}
