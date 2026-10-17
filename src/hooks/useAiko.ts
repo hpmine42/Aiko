@@ -559,6 +559,29 @@ export function useAiko({ toast }: UseAikoOptions) {
     storeCurrent({ ...chat, messages });
   }, [storeCurrent]);
 
+  const toggleFav = useCallback((index: number) => {
+    const chat = currentRef.current;
+    const messages = [...chat.messages];
+    const message = messages[index];
+    if (!message || message.role !== 'assistant') return;
+    messages[index] = { ...message, fav: !message.fav };
+    storeCurrent({ ...chat, messages });
+    toast(message.fav ? 'Favorit entfernt' : 'Zu Favoriten hinzugefügt');
+  }, [storeCurrent, toast]);
+
+  const setFav = useCallback((chat: Chat, index: number, fav: boolean) => {
+    const messages = [...chat.messages];
+    const message = messages[index];
+    if (!message || message.role !== 'assistant') return;
+    messages[index] = { ...message, fav };
+    const next = { ...chat, messages };
+    if (currentRef.current.id === chat.id) {
+      currentRef.current = next;
+      setCurrentState(next);
+    }
+    setChats((list) => list.map((entry) => entry.id === chat.id ? next : entry));
+  }, [setChats]);
+
   const renameChat = useCallback((chat: Chat, title: string) => {
     const next = { ...chat, title };
     if (currentRef.current.id === chat.id) {
@@ -647,6 +670,8 @@ export function useAiko({ toast }: UseAikoOptions) {
     editUser,
     setVariant,
     setFeedback,
+    toggleFav,
+    setFav,
     renameChat,
     pinChat,
     deleteChat,

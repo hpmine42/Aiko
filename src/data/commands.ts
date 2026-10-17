@@ -28,6 +28,7 @@ export const CMD_LIST: Command[] = [
   ["/countdown bis Weihnachten", "Countdown speichern"],
   ["/meine countdowns", "Countdowns anzeigen"],
   ["/meine Statistik", "Nutzungsstatistik als Diagramm"],
+  ["/heute", "Tagesübersicht: KW, Mond, Feiertage, Timer"],
   ["/was ist günstiger: 200 g für 1,50 € oder 500 g für 3,20 €", "Preisvergleich"],
   ["/wie lange dauert 4,7 GB bei 50 Mbit/s?", "Download-Zeit & Datenvolumen"],
   ["/wie viele Tage bis Weihnachten?", "Datum & Countdown"],
@@ -58,6 +59,7 @@ export const CMD_LIST: Command[] = [
   ["/sternzeichen am 14.3.", "Sternzeichen & chinesisches Tierkreiszeichen"],
   ["/rezept von 4 auf 6 Personen: …", "Rezept umrechnen, Küchenmaße"],
   ["/zahlenraten", "Mini-Spiele: Galgenmännchen, Quiz, Kopfrechnen"],
+  ["/spruch des tages", "Spruch, Zitat oder Flachwitz"],
   ["/tic tac toe", "Tic-Tac-Toe mit klickbarem Brett"],
   ["/4 gewinnt", "Vier gewinnt gegen die KI"],
   ["/sudoku", "Sudoku generieren oder lösen"],
@@ -125,7 +127,10 @@ export const CMD_MORE: CommandGroup[] = [
   ["Merken & Wissen", [
     ["Was weißt du über mich?", "Erinnerungen anzeigen"],
     ["Vergiss: …", "Erinnerung löschen"],
-    ["Was weißt du über …?", "Wissenssammlung durchsuchen"]
+    ["Was weißt du über …?", "Wissenssammlung durchsuchen"],
+    ["Zitat des Tages", "Klassisches Zitat mit Autor"],
+    ["Spruch des Tages", "Lebensweisheit, rotiert täglich"],
+    ["Flachwitz", "Kurzer Witz aus der Offline-Sammlung"]
   ]],
   ["Stoppuhr & Pomodoro", [
     ["Runde", "Zwischenzeit speichern"],

@@ -15,6 +15,7 @@ interface HeaderProps {
   onExport: () => void;
   onRename: () => void;
   onOpenRules: () => void;
+  onOpenFavorites: () => void;
   onDelete: () => void;
   toast: (message: string) => void;
 }
@@ -31,6 +32,7 @@ export function Header({
   onExport,
   onRename,
   onOpenRules,
+  onOpenFavorites,
   onDelete,
   toast,
 }: HeaderProps) {
@@ -109,6 +111,7 @@ export function Header({
         <MenuItem icon="share" label="Als Markdown exportieren" action={onExport} close={() => setChatOpen(false)} />
         <MenuItem icon="copy" label="Drucken" action={() => window.print()} close={() => setChatOpen(false)} />
         <MenuItem icon="edit" label="Umbenennen" action={onRename} close={() => setChatOpen(false)} />
+        <MenuItem icon="star" label="Favoriten" action={onOpenFavorites} close={() => setChatOpen(false)} />
         <MenuItem icon="rules" label="Antworten festlegen" action={onOpenRules} close={() => setChatOpen(false)} />
         <MenuItem icon="trash" label="Löschen" action={onDelete} close={() => setChatOpen(false)} danger />
       </Popover>

@@ -53,7 +53,7 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - UND-Verknüpfung mit `&`, Ausschlüsse (`nicht bei: …`), Prioritäten, aktiv/inaktiv
 - Antwortvarianten (mit `|||` getrennt), Vorschlags-Buttons und Folgeantworten für „kürzer“, „einfacher“, „warum“, „beispiel“, „mehr“, „nochmal“
 - Regel-Editor, Regel-Code-Import mit Validierungsfehlern, Regel-Testsuite, Nutzungsstatistik, JSON-Import/-Export
-- Chat-Komfort: Neugenerieren, Varianten wechseln, Nachrichten bearbeiten, Feedback, Teilen, Vorlesen, Verlauf anpinnen und umbenennen
+- Chat-Komfort: Neugenerieren, Varianten wechseln, Nachrichten bearbeiten, Feedback, Teilen, Vorlesen, Verlauf anpinnen und umbenennen; Antworten mit ☆ als Favorit merken und übergreifend im Chat-Menü unter „Favoriten“ sammeln
 
 ### Werkzeuge, die echte Ergebnisse liefern
 
@@ -88,7 +88,9 @@ Jede Nachricht läuft in dieser Reihenfolge durch die Engine (siehe [`src/engine
 - **Erinnerungen:** Erinnerungen als Timer („Erinnere mich morgen um 9 an den Zahnarzt“). Sie feuern nur, solange Aiko im Browser geöffnet ist.
 - **Druckansicht:** Chat über das Menü drucken (ohne Seitenleiste und Eingabe)
 - **Statistik-Dashboard:** „Meine Statistik“ zeigt als Diagramm, welche Werkzeuge und Regeln wie oft geantwortet haben
-- **Mehr Befehle** – 64 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
+- **Heute-Übersicht:** „Heute“ zeigt Datum, Kalenderwoche, Mondphase, den nächsten Feiertag, Countdowns und laufende Timer auf einen Blick
+- **Sprüche, Witze & Zitate:** „Spruch des Tages“, „Zitat“, „Flachwitz“ – kuratierte Offline-Sammlung, täglich zuverlässig rotierend
+- **Mehr Befehle** – 66 Slash-Befehle plus Kurzformen in 15 Themengebieten – Übersicht im Chat mit `/hilfe`
 
 ### Verwaltung & Datenschutz im Alltag
 
@@ -256,7 +258,9 @@ Every message passes through the engine in this order ([`src/engine/aikoEngine.t
 - Mini games: number guessing, rock-paper-scissors, mental arithmetic, hangman, quiz, plus board games with clickable widgets – Tic-Tac-Toe (unbeatable on “schwer”), Connect Four (alpha-beta AI, three levels) and Sudoku (generator with three difficulties and a guaranteed unique solution, solver for external puzzles, hints with explanations)
 - Reminders as timers (“Erinnere mich morgen um 9 an den Zahnarzt”) – they only fire while Aiko is open in the browser
 - Print view of the chat from the menu (without sidebar and composer)
-- 64 slash commands and short forms across 15 topics – type `/hilfe` in the chat
+- 66 slash commands and short forms across 15 topics – type `/hilfe` in the chat
+- “Today” dashboard (“Heute”): date, calendar week, moon phase, next public holiday, countdowns and running timers at a glance; daily quotes, jokes and quotations (“Spruch des Tages”, “Zitat”, “Flachwitz”) rotate deterministically each day
+- Star answers as favourites and browse them across all chats from the chat menu (“Favoriten”)
 - Light/dark/system theme, avatar handling, chat pinning and renaming, Markdown chat export, full JSON backup; existing `nova.*` data from the original single-file app stays compatible
 
 ## Quick start

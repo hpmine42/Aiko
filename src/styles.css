@@ -424,3 +424,13 @@ button.wttt-c.empty:hover{opacity:1;color:var(--accent2);border-color:var(--acce
 .wc4-c{aspect-ratio:1;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
 .wc4-c.x{background:#2c67c5}
 .wc4-c.o{background:#e0604d}
+
+/* Favoriten-Seite */
+.fav-item{display:flex;align-items:stretch;gap:4px;border-bottom:1px solid var(--line)}
+.fav-item:last-child{border-bottom:none}
+.fav-open{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:12px 10px;background:none;border:none;text-align:left;cursor:pointer;color:var(--text)}
+.fav-open:active{background:var(--surface2)}
+.fav-excerpt{font-size:14.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.fav-meta{font-size:12px;color:var(--mute)}
+.fav-remove{flex:none;align-self:center;color:var(--accent2)}
+.fav-remove .i{fill:var(--accent2)}

@@ -19,6 +19,7 @@ interface MessageProps {
   onRegenerate: (index: number) => void;
   onVariant: (index: number, variant: number) => void;
   onFeedback: (index: number, feedback: 'up' | 'down' | null) => void;
+  onToggleFav?: (index: number) => void;
   onSuggestion: (text: string) => void;
   toast: (message: string) => void;
 }
@@ -96,6 +97,7 @@ function AssistantMessageView({
   onRegenerate,
   onVariant,
   onFeedback,
+  onToggleFav,
   onSuggestion,
   toast,
 }: { message: AssistantMessage } & SharedProps) {
@@ -168,6 +170,15 @@ function AssistantMessageView({
               <span>{message.vi + 1}/{message.variants.length}</span>
               <button type="button" aria-label="Nächste Antwort" disabled={message.vi === message.variants.length - 1} onClick={() => onVariant(index, message.vi + 1)}><Icon name="chevR" /></button>
             </div>
+          )}
+          {onToggleFav && (
+            <button
+              type="button"
+              className={`ab${message.fav ? ' on' : ''}`}
+              aria-label={message.fav ? 'Favorit entfernen' : 'Als Favorit merken'}
+              aria-pressed={message.fav === true}
+              onClick={() => onToggleFav(index)}
+            ><Icon name="star" /></button>
           )}
           <button type="button" className="ab" aria-label="Kopieren" onClick={async () => { toast(await copyText(plainCopy(rendered)) ? 'Kopiert' : 'Kopieren fehlgeschlagen'); }}><Icon name="copy" /></button>
           <button

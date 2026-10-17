@@ -17,6 +17,7 @@ interface MessageListProps {
   onRegenerate: (index: number) => void;
   onVariant: (index: number, variant: number) => void;
   onFeedback: (index: number, feedback: 'up' | 'down' | null) => void;
+  onToggleFav?: (index: number) => void;
   onSuggestion: (text: string) => void;
   toast: (message: string) => void;
   onBottomVisibility: (visible: boolean) => void;
@@ -32,6 +33,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   onRegenerate,
   onVariant,
   onFeedback,
+  onToggleFav,
   onSuggestion,
   toast,
   onBottomVisibility,
@@ -84,6 +86,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
             onRegenerate={onRegenerate}
             onVariant={onVariant}
             onFeedback={onFeedback}
+          onToggleFav={onToggleFav}
             onSuggestion={onSuggestion}
             toast={toast}
           />
