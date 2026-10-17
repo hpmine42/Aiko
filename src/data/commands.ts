@@ -27,7 +27,9 @@ export const CMD_LIST: Command[] = [
   ["/wie spät ist es in Tokio", "Zeitzone"],
   ["/countdown bis Weihnachten", "Countdown speichern"],
   ["/meine countdowns", "Countdowns anzeigen"],
+  ["/meine Statistik", "Nutzungsstatistik als Diagramm"],
   ["/was ist günstiger: 200 g für 1,50 € oder 500 g für 3,20 €", "Preisvergleich"],
+  ["/wie lange dauert 4,7 GB bei 50 Mbit/s?", "Download-Zeit & Datenvolumen"],
   ["/wie viele Tage bis Weihnachten?", "Datum & Countdown"],
   ["/merke dir: …", "Etwas merken"],
   ["/zähle Wörter: …", "Text-Werkzeuge"],
@@ -48,8 +50,11 @@ export const CMD_LIST: Command[] = [
   ["/teste /\\d+/g an: …", "RegEx-Tester"],
   ["/kalender März 2026", "Monatskalender mit Feiertagen & KW"],
   ["/arbeitstage bis Weihnachten", "Arbeitstage & Werktage zählen"],
+  ["/prognose 10 km in 52:30", "Lauf-Prognose, Splits & Pulszonen"],
   ["/erinnere mich morgen um 9 an …", "Erinnerung (läuft, solange Aiko offen ist)"],
   ["/kennzeichen BN", "Kfz-Unterscheidungszeichen"],
+  ["/schuhgröße 42 in US", "Schuh- & Kleidungsgrößen umrechnen"],
+  ["/kleidungsgröße 38 in US", "Konfektionsgrößen (EU/US/UK)"],
   ["/sternzeichen am 14.3.", "Sternzeichen & chinesisches Tierkreiszeichen"],
   ["/rezept von 4 auf 6 Personen: …", "Rezept umrechnen, Küchenmaße"],
   ["/zahlenraten", "Mini-Spiele: Galgenmännchen, Quiz, Kopfrechnen"],
@@ -96,7 +101,10 @@ export const CMD_MORE: CommandGroup[] = [
     ["passwort ohne sonderzeichen", "Zeichensatz festlegen"],
     ["passwort nur mit ziffern", "nur Ziffern oder Buchstaben"],
     ["8-stellige pin", "PIN-Länge wählen"],
-    ["QR WLAN: Name=…; Passwort=…", "WLAN-QR-Code"]
+    ["QR WLAN: Name=…; Passwort=…", "WLAN-QR-Code"],
+    ["QR Kontakt: Name=…; Telefon=…", "Kontakt-QR-Code (vCard)"],
+    ["QR Telefon: +49 …", "QR-Code zum Anrufen"],
+    ["QR Geo: 50,73; 7,09", "Standort-QR-Code"]
   ]],
   ["Diagramme & Listen", [
     ["Liniendiagramm: Jan 5, Feb 8, Mär 2", "Liniendiagramm"],
