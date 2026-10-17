@@ -6,7 +6,7 @@ import { DAY_MS, clean, fmtShortDay, pick, todayUTC } from './shared';
    die kurze Form ohne Zusatz würfelt. Der Befehl „Witz“ (ohne Zusatz) bleibt der
    eingebauten Regel „witz“ vorbehalten, die eigene Antwortvarianten und Nachfragen hat. */
 
-const SPRUECHE: readonly string[] = [
+export const SPRUECHE: readonly string[] = [
   'Der Weg entsteht, indem man ihn geht.',
   'Große Dinge haben klein angefangen.',
   'Besser unperfekt begonnen als perfekt verschoben.',
@@ -31,9 +31,33 @@ const SPRUECHE: readonly string[] = [
   'Ein offenes Fenster holt mehr Licht als eine geschlossene Tür.',
   'Man muss nicht alles wissen – nur wissen, wo es steht.',
   'Schwierigkeiten sind Chancen in Arbeitskleidung.',
+  'Steter Tropfen höhlt den Stein.',
+  'Übung macht den Meister.',
+  'Eile mit Weile.',
+  'Wer wagt, gewinnt.',
+  'Reden ist Silber, Schweigen ist Gold.',
+  'Der Ton macht die Musik.',
+  'Wie man in den Wald hineinruft, so schallt es heraus.',
+  'Aufgeschoben ist nicht aufgehoben.',
+  'Gut Ding will Weile haben.',
+  'Wer zuletzt lacht, lacht am besten.',
+  'Man soll den Tag nicht vor dem Abend loben.',
+  'Ein geteiltes Problem ist halbiert, eine geteilte Freude verdoppelt.',
+  'Ein Danke öffnet mehr Türen als ein Schlüssel.',
+  'Du musst nicht groß sein, um Großes zu tun.',
+  'Das Glück bevorzugt die, die anfangen.',
+  'Lob kostet nichts und wirkt am längsten.',
+  'Ein neugieriger Kopf altert langsamer.',
+  'Pausen gehören zum Weg wie Atem zum Laufen.',
+  'Das meiste Wachstum passiert unsichtbar – wie bei Wurzeln.',
+  'Klarheit entsteht oft erst beim Aufschreiben.',
+  'Wer sich Zeit nimmt, hat am Ende mehr davon.',
+  'Ein kleiner Fortschritt ist kein Ziel – aber kein Stillstand.',
+  'Gut vorbereitet ist halb gewonnen.',
+  'Viele Wege führen nach Rom – einer reicht dir.',
 ];
 
-const WITZE: readonly string[] = [
+export const WITZE: readonly string[] = [
   'Was ist ein Keks unter einem Baum? Ein schattiges Plätzchen.',
   'Was ist weiß und stört beim Essen? Eine Lawine.',
   'Was ist grün und klopft an die Tür? Ein Klopfsalat.',
@@ -52,9 +76,27 @@ const WITZE: readonly string[] = [
   'Was macht ein Clown im Büro? Faxen.',
   'Was sitzt auf dem Baum und winkt? Ein Huhu.',
   'Was ist braun und rennt durch die Wüste? Eine Dattel-maus.',
+  'Treffen sich zwei Jäger. Beide tot.',
+  'Kommt ein Mann zum Bäcker: „Ich hätte gern 99 Brötchen.“ – „Warum nicht gleich 100?“ – „Wer soll denn die alle essen?“',
+  'Treffen sich zwei Eier in der Pfanne. Sagt das eine: „Ach, du auch hier?“',
+  'Was hat vier Beine und kann fliegen? Zwei Vögel.',
+  'Was wird nass, wenn es trocknet? Ein Handtuch.',
+  'Was geht bergauf und bergab und bleibt trotzdem an Ort und Stelle? Eine Treppe.',
+  'Warum trinken Mäuse keinen Alkohol? Weil sie Angst vor dem Kater haben.',
+  'Wie nennt man ein weißes Mammut? Helmut.',
+  'Was ist schwarz-weiß und hüpft von Eisscholle zu Eisscholle? Ein Springuin.',
+  'Was macht ein Kommissar auf dem Eis? Er zieht Schlüsse.',
+  'Warum können Fische nicht Basketball spielen? Sie haben Angst vorm Netz.',
+  'Was ist rosa und schaut durchs Schlüsselloch? Ein Spanferkel.',
+  'Warum haben Giraffen so lange Hälse? Weil der Kopf so weit oben sitzt.',
+  'Es gibt 10 Arten von Menschen: die, die Binärcode verstehen – und die, die ihn nicht verstehen.',
+  'Was ist braun und sitzt hinter Gittern? Eine Knastanie.',
+  'Wie nennt man einen Fisch ohne Auge? Fsch.',
+  'Was macht eine Spinne am Computer? Sie sitzt im World Wide Web.',
+  'Warum mögen Informatiker den Sommer nicht? Zu viele Bugs.',
 ];
 
-const ZITATE: ReadonlyArray<readonly [string, string]> = [
+export const ZITATE: ReadonlyArray<readonly [string, string]> = [
   ['Man sieht nur mit dem Herzen gut. Das Wesentliche ist für die Augen unsichtbar.', 'Antoine de Saint-Exupéry'],
   ['Ich denke, also bin ich.', 'René Descartes'],
   ['Es gibt nichts Gutes, außer man tut es.', 'Erich Kästner'],
@@ -71,6 +113,14 @@ const ZITATE: ReadonlyArray<readonly [string, string]> = [
   ['Das Sein bestimmt das Bewusstsein.', 'Karl Marx'],
   ['Jeder Mensch ist ein Künstler.', 'Joseph Beuys'],
   ['Zwei Dinge sind unendlich: das Universum und die menschliche Dummheit. Beim Universum bin ich mir allerdings nicht ganz sicher.', 'Albert Einstein'],
+  ['Die Grenzen meiner Sprache bedeuten die Grenzen meiner Welt.', 'Ludwig Wittgenstein'],
+  ['Natürlicher Verstand kann fast jeden Grad von Bildung ersetzen; keine Bildung aber den natürlichen Verstand.', 'Arthur Schopenhauer'],
+  ['Der Klügere gibt nach. Eine traurige Wahrheit: Sie begründet die Weltherrschaft der Dummen.', 'Marie von Ebner-Eschenbach'],
+  ['Nichts im Leben ist zu fürchten, es ist nur zu verstehen.', 'Marie Curie'],
+  ['In der Mitte der Schwierigkeit liegt die Möglichkeit.', 'Albert Einstein'],
+  ['Das Leben ist das, was passiert, während du eifrig dabei bist, andere Pläne zu machen.', 'John Lennon'],
+  ['Ein Buch ist ein Garten, den man in der Tasche tragen kann.', 'arabisches Sprichwort'],
+  ['Wenn du ein Schiff bauen willst, dann rufe nicht die Menschen zusammen, um Holz zu sammeln, sondern lehre sie die Sehnsucht nach dem weiten Meer.', 'Antoine de Saint-Exupéry'],
 ];
 
 type Category = 'spruch' | 'witz' | 'zitat';

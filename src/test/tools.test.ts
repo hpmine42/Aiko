@@ -17,7 +17,7 @@ import { buildMonth, isoWeek } from '../engine/tools/calendar';
 import { addWorkdays, countWorkdays } from '../engine/tools/workdays';
 import { parseClock, parseDuration } from '../engine/tools/timecalc';
 import { activeGame, resetGames } from '../engine/tools/games';
-import { quotesTool } from '../engine/tools/quotes';
+import { quotesTool, SPRUECHE, WITZE, ZITATE } from '../engine/tools/quotes';
 import { todayTool } from '../engine/tools/today';
 import { tttBestMove, tttMove, tttWinner } from '../engine/tools/tictactoe';
 import { c4BestMove, c4Drop, c4Winner } from '../engine/tools/connect4';
@@ -782,5 +782,17 @@ describe('Sprüche, Witze & Zitate', () => {
     expect(ask('Witz des Tages').source).toBe('quotes');
     expect(ask('Witz').source).toBe('rule');
     expect(ask('Erzähl mir einen Witz').source).toBe('rule');
+  });
+});
+
+describe('Sprüche-Sammlungen', () => {
+  it('ist groß genug für tägliche Rotation und enthält keine Duplikate', () => {
+    expect(SPRUECHE.length).toBeGreaterThanOrEqual(48);
+    expect(WITZE.length).toBeGreaterThanOrEqual(36);
+    expect(ZITATE.length).toBeGreaterThanOrEqual(24);
+    expect(new Set(SPRUECHE).size).toBe(SPRUECHE.length);
+    expect(new Set(WITZE).size).toBe(WITZE.length);
+    expect(new Set(ZITATE.map(([text]) => text)).size).toBe(ZITATE.length);
+    expect(WITZE.join(' ').toLowerCase()).not.toContain('magnet');
   });
 });
